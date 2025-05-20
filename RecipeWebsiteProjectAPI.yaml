@@ -1,0 +1,724 @@
+openapi: 3.0.3
+info:
+  title: Recipe Project API
+  description: "This API provides endpoints for user registration, authentication, recipe discovery, favorites management, meal planning, and cooking progress tracking. It enables users to search for recipes, save and organize their favorites, plan meals, and monitor their preparation progress."
+  contact:
+    name: Shay Harush - Backend Developer & Noam Tarshish - Frontend Developer
+    email: Shayhar@post.bgu.ac.il
+  version: 1.0.0
+servers:
+- url: https://virtserver.swaggerhub.com/noamtarshish-4aa/RecipeWebsiteProjectAPI/1.0.0
+  description: SwaggerHub API Auto Mocking
+paths:
+  /register:
+    post:
+      tags:
+      - Authentication
+      summary: Register a new user
+      description: Registers a new user with the provided details.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegistration'
+        required: true
+      responses:
+        "201":
+          description: User successfully registered.
+        "400":
+          description: Invalid input.
+        "409":
+          description: Username already exists.
+  /login:
+    post:
+      tags:
+      - Authentication
+      summary: User login
+      description: Logs in a user with the provided credentials.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLogin'
+        required: true
+      responses:
+        "200":
+          description: User successfully logged in.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserToken'
+        "400":
+          description: Invalid input.
+        "401":
+          description: Username or password incorrect.
+        "409":
+          description: User already logged in.
+  /logout:
+    post:
+      tags:
+      - Authentication
+      summary: User logout
+      description: Logs out the currently logged-in user.
+      responses:
+        "200":
+          description: User successfully logged out.
+        "409":
+          description: No user logged in.
+  /addNewRecipe:
+    post:
+      tags:
+      - Users
+      summary: Add a new recipe
+      description: Adds a new recipe created by the logged-in user.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Recipe'
+        required: true
+      responses:
+        "201":
+          description: Recipe successfully created.
+        "400":
+          description: Invalid input.
+        "401":
+          description: No user logged in.
+  /LastViewedRecipes:
+    get:
+      tags:
+      - Users
+      summary: Get last viewed recipes
+      description: Retrieves the last 3 viewed recipes saved by the logged-in user.
+      responses:
+        "200":
+          description: List of last viewed recipes.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecipePreview'
+        "401":
+          description: No user logged in.
+    post:
+      tags:
+      - Users
+      summary: Add a recipe to the last viewed list
+      description: Adds a recipe to the last viewed list of the logged-in user.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LastViewedRecipes_body'
+        required: true
+      responses:
+        "200":
+          description: Recipe successfully saved as last viewed.
+        "401":
+          description: No user logged in.
+  /IsLastViewedRecipe:
+    get:
+      tags:
+      - Users
+      summary: Check if a recipe is in the last viewed list
+      description: Checks if a specific recipe is in the last viewed list of the logged-in user.
+      parameters:
+      - name: recipeId
+        in: query
+        description: ID of the recipe to check.
+        required: true
+        schema:
+          type: integer
+        example: 160303
+      responses:
+        "200":
+          description: Boolean indicating if the recipe is in the last viewed list.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200'
+        "401":
+          description: No user logged in.
+  /FavoritesRecipes:
+    get:
+      tags:
+      - Users
+      summary: Get favorite recipes
+      description: Retrieves the favorite recipes saved by the logged-in user.
+      responses:
+        "200":
+          description: List of favorite recipes.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecipePreview'
+        "401":
+          description: No user logged in.
+        "203":
+          description: No favorite recipes found.
+    post:
+      tags:
+      - Users
+      summary: Add a recipe to favorites
+      description: Adds a recipe to the favorites list of the logged-in user.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FavoritesRecipes_body'
+        required: true
+      responses:
+        "200":
+          description: Recipe successfully saved as favorite.
+        "401":
+          description: No user logged in.
+    delete:
+      tags:
+      - Users
+      summary: Remove a recipe from favorites
+      description: Removes a recipe from the favorites list of the logged-in user.
+      parameters:
+      - name: recipeId
+        in: query
+        description: ID of the recipe to be removed from the favorites list.
+        required: true
+        schema:
+          type: integer
+        example: 160303
+      responses:
+        "200":
+          description: Recipe successfully removed from favorites.
+        "401":
+          description: No user logged in.
+  /MyRecipes:
+    get:
+      tags:
+      - Users
+      summary: Get all user-created recipes
+      description: Retrieves all recipes created by the logged-in user.
+      responses:
+        "200":
+          description: List of recipes created by the user.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecipePreview'
+        "401":
+          description: No user logged in.
+        "203":
+          description: No recipes found.
+  /search:
+    get:
+      tags:
+      - Recipes
+      summary: Search for recipes
+      description: Searches for recipes based on various parameters.
+      parameters:
+      - name: recipeName
+        in: query
+        description: The name of the recipe to search for.
+        required: false
+        schema:
+          type: string
+        example: Pasta
+      - name: cuisine
+        in: query
+        description: Cuisine filter for the recipe search.
+        required: false
+        schema:
+          type: string
+        example: Italian
+      - name: diet
+        in: query
+        description: Diet filter for the recipe search.
+        required: false
+        schema:
+          type: string
+        example: Vegetarian
+      - name: intolerance
+        in: query
+        description: Intolerance filter for the recipe search.
+        required: false
+        schema:
+          type: string
+        example: glutenFree
+      - name: number
+        in: query
+        description: Number of recipes to return.
+        required: false
+        schema:
+          type: integer
+        example: 5
+      - name: sort
+        in: query
+        description: Sorting order for the search results.
+        required: false
+        schema:
+          type: string
+        example: popularity
+      responses:
+        "200":
+          description: List of recipes matching the search criteria.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecipePreview'
+  /random:
+    get:
+      tags:
+      - Recipes
+      summary: Get random recipes
+      description: Returns a specified number of random recipes in the main page of the website (left column).
+      parameters:
+      - name: number
+        in: query
+        description: Number of random recipes to return.
+        required: false
+        schema:
+          type: integer
+        example: 3
+      responses:
+        "200":
+          description: List of random recipes.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecipePreview'
+  /{recipe_id}:
+    get:
+      tags:
+      - Recipes
+      summary: Get recipe details
+      description: Retrieves the full details of a specific recipe by its ID.
+      parameters:
+      - name: recipe_id
+        in: path
+        description: The ID of the recipe to retrieve details for.
+        required: true
+        schema:
+          type: integer
+        example: 160303
+      responses:
+        "200":
+          description: Detailed data of the specific recipe.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Recipe'
+        "404":
+          description: Recipe not found.
+  /RecipesPreview:
+    post:
+      tags:
+      - Recipes
+      summary: Get recipes preview
+      description: Provides a preview of multiple recipes (5/10/15) based on their IDs.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecipesPreview_body'
+        required: true
+      responses:
+        "200":
+          description: List of recipe previews.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecipePreview'
+  /MyMeal:
+    get:
+      tags:
+      - Users
+      summary: Get user's meal plan
+      description: Retrieves all recipes included in the user's current meal plan.
+      responses:
+        "200":
+          description: A list of recipes in the user's meal plan.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  allOf:
+                  - $ref: '#/components/schemas/RecipePreview'
+                  - $ref: '#/components/schemas/RecipeProgress'
+        "401":
+          description: No user logged in.
+    put:
+      tags:
+      - Users
+      summary: Update meal plan order
+      description: Updates the order of recipes in the user's meal plan.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MyMeal_body'
+        required: true
+      responses:
+        "200":
+          description: Meal plan successfully reordered.
+        "401":
+          description: No user logged in.
+    post:
+      tags:
+      - Users
+      summary: Add a recipe to meal plan
+      description: Adds a recipe to the user's meal plan.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MyMeal_body_1'
+        required: true
+      responses:
+        "200":
+          description: Recipe successfully added to meal plan.
+        "401":
+          description: No user logged in.
+    delete:
+      tags:
+      - Users
+      summary: Remove a recipe from meal plan
+      description: Removes a recipe from the user's meal plan.
+      parameters:
+      - name: recipeId
+        in: query
+        description: ID of the recipe to remove from the meal plan.
+        required: true
+        schema:
+          type: integer
+        example: 160303
+      responses:
+        "200":
+          description: Recipe successfully removed from meal plan.
+        "401":
+          description: No user logged in.
+  /RecipeMakingProgress/{recipeId}:
+    get:
+      tags:
+      - Users
+      summary: Get recipe making progress
+      description: Retrieves the progress of making a specific recipe in the user's meal.
+      parameters:
+      - name: recipeId
+        in: path
+        description: ID of the recipe to retrieve progress for.
+        required: true
+        schema:
+          type: integer
+        example: 160303
+      responses:
+        "200":
+          description: Progress details of the recipe.
+        "401":
+          description: No user logged in.
+  /RecipeMaking:
+    get:
+      tags:
+      - Users
+      summary: Get all recipes making progress
+      description: Retrieves the making progress of all recipes or a specific recipe in the user's meal.
+      responses:
+        "200":
+          description: Progress details of the recipes.
+        "401":
+          description: No user logged in.
+    put:
+      tags:
+      - Users
+      summary: Update recipe making progress
+      description: Updates the making progress of a recipe in the user's meal.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecipeMaking_body'
+        required: true
+      responses:
+        "200":
+          description: Recipe making progress successfully updated.
+        "401":
+          description: No user logged in.
+components:
+  schemas:
+    UserRegistration:
+      required:
+      - country
+      - email
+      - firstname
+      - lastname
+      - password
+      - passwordConfirmation
+      - username
+      type: object
+      properties:
+        username:
+          maxLength: 8
+          minLength: 3
+          pattern: "^[a-zA-Z]+$"
+          type: string
+          description: |
+            Unique identifier for the user, consisting of letters only. - Must be between 3 and 8 characters long. - Can only contain alphabetic characters (A-Z, a-z).
+          example: shayhar
+        firstname:
+          type: string
+          description: The user's first name.
+          example: Shay
+        lastname:
+          type: string
+          description: The user's last name.
+          example: Harush
+        country:
+          type: string
+          description: The country of residence for the user.
+          example: ISRAEL
+        password:
+          maxLength: 10
+          minLength: 5
+          pattern: "^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{5,10}$"
+          type: string
+          description: |
+            The user's password, which must include at least one digit and one special character. - Must be between 5 and 10 characters long. - Must contain at least one digit (0-9). - Must contain at least one special character (!@#$%^&*). - Can contain alphabetic characters (A-Z, a-z), digits, and special characters (!@#$%^&*).
+          format: password
+          example: Passw0rd!
+        passwordConfirmation:
+          type: string
+          description: |
+            Must match the password field exactly.
+          format: password
+          example: Passw0rd!
+        email:
+          pattern: "^[^@]+@[^@]+\\.[^@]+$"
+          type: string
+          description: |
+            The user's email address. - Must follow the standard email format (e.g., user@example.com).
+          format: email
+          example: shay.har@example.com
+    UserLogin:
+      required:
+      - password
+      - username
+      type: object
+      properties:
+        username:
+          type: string
+          description: |
+            The username of the user. - Must be between 3 and 8 characters long.
+          example: ShayHar
+        password:
+          type: string
+          description: |
+            The user's password. - Must be between 5 and 10 characters long. - Must contain at least one digit (0-9). - Must contain at least one special character (!@#$%^&*) - Can contain alphabetic characters (A-Z, a-z), digits, and special characters (!@#$%^&*).
+          format: password
+          example: Passw0rd!
+    UserToken:
+      type: string
+      example: "12345646"
+    Recipe:
+      required:
+      - extendedIngredients
+      - image
+      - instructions
+      - readyInMinutes
+      - servings
+      - summary
+      - title
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the recipe.
+          example: 160303
+        title:
+          type: string
+          description: Title of the recipe.
+          example: Spaghetti Pesto
+        image:
+          type: string
+          description: URL to the image of the recipe.
+          format: uri
+          example: https://img.spoonacular.com/recipes/655806-312x231.jpg
+        readyInMinutes:
+          type: integer
+          description: Time in minutes to prepare the recipe.
+          example: 45
+        aggregateLikes:
+          type: integer
+          description: Number of likes the recipe has received.
+          example: 325
+        vegetarian:
+          type: boolean
+          description: Whether the recipe is vegetarian.
+          example: false
+        vegan:
+          type: boolean
+          description: Whether the recipe is vegan.
+          example: false
+        glutenFree:
+          type: boolean
+          description: Whether the recipe is gluten-free.
+          example: false
+        summary:
+          type: string
+          description: Summary of the recipe.
+          example: A quick and easy recipe for classic Spaghetti Pesto.
+        instructions:
+          type: array
+          description: List of instructions for preparing the recipe.
+          example:
+          - Boil the pasta
+          - Cook the sauce with all the ingredients
+          - Mix the pasta and the sauce
+          items:
+            type: string
+        extendedIngredients:
+          type: array
+          items:
+            $ref: '#/components/schemas/Recipe_extendedIngredients'
+        servings:
+          type: integer
+          description: Number of servings the recipe makes.
+          example: 4
+    RecipePreview:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the recipe.
+          example: 1
+        title:
+          type: string
+          description: Name of the recipe.
+          example: Spaghetti Pesto
+        image:
+          type: string
+          description: URL of the recipe image.
+          format: uri
+          example: https://img.spoonacular.com/recipes/655806-312x231.jpg
+        timeToCook:
+          type: integer
+          description: Time in minutes to cook the recipe.
+          example: 45
+        likes:
+          type: integer
+          description: Number of likes the recipe has received.
+          example: 100
+        vegetarian:
+          type: boolean
+          description: Whether the recipe is vegetarian.
+          example: true
+        vegan:
+          type: boolean
+          description: Whether the recipe is vegan.
+          example: false
+        glutenFree:
+          type: boolean
+          description: Whether the recipe is gluten-free.
+          example: false
+    RecipeProgress:
+      type: array
+      description: Array representing the instructions completed by the user for a specific recipe.
+      example:
+      - true
+      - false
+      - true
+      items:
+        type: boolean
+    LastViewedRecipes_body:
+      type: object
+      properties:
+        recipeId:
+          type: integer
+          description: ID of the recipe to be added to the last viewed list.
+          example: 160303
+    inline_response_200:
+      type: object
+      properties:
+        isLastViewed:
+          type: boolean
+          example: true
+    FavoritesRecipes_body:
+      type: object
+      properties:
+        recipeId:
+          type: integer
+          description: ID of the recipe to be added to the favorites list.
+          example: 160303
+    RecipesPreview_body:
+      type: object
+      properties:
+        recipes_id:
+          type: array
+          description: An array of recipe IDs to get previews for.
+          example:
+          - 160303
+          - 638921
+          - 347283
+          - 132123
+          - 454545
+          items:
+            type: integer
+    MyMeal_body:
+      type: object
+      properties:
+        recipes_order_id:
+          type: array
+          description: Array of recipe IDs representing the new order.
+          example:
+          - 160303
+          - 638921
+          - 347283
+          items:
+            type: integer
+    MyMeal_body_1:
+      type: object
+      properties:
+        recipeId:
+          type: integer
+          description: ID of the recipe to add to the meal plan.
+          example: 160303
+    RecipeMaking_body:
+      type: object
+      properties:
+        recipeId:
+          type: integer
+          description: ID of the recipe.
+          example: 160303
+        recipe_progress:
+          type: array
+          description: Progress data of the recipe.
+          example:
+          - true
+          - false
+          - true
+          items:
+            type: boolean
+    Recipe_extendedIngredients:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the ingredient.
+          example: Basil
+        amount:
+          type: number
+          description: Amount of the ingredient.
+          format: float
+          example: 4
+        unit:
+          type: string
+          description: Unit of the ingredient amount.
+          example: leafs
