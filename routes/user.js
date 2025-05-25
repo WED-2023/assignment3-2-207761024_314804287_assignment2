@@ -70,13 +70,71 @@ router.get("/IsLastViewedRecipe", async (req, res, next) => {
 // ==================================Last Viewed Recipes=========================================
 
 // ===================================Favorites Recipes=========================================
+/**
+ * Adds a recipe to the favorites list of the logged-in user.
+ * Endpoint: POST /FavoritesRecipes
+ * Body Parameters: recipeId (ID of the recipe to be added to favorites)
+ * Response: Success or failure message.
+ */
+router.post("/FavoritesRecipes", async (req, res, next) => {
+  try {
+    if (!req.session.user_id) {
+      throw { status: 401, message: "No User Logged in." };
+    }
 
+    const user_id = req.session.user_id;
+    const recipe_id = req.body.recipeId;
+    await user_utils.markAsFavorite(user_id, recipe_id);
+    res.status(200).send("The Recipe successfully saved as favorite");
 
+  } 
+  catch (error) {
+    next(error);
+  }
+});
 
+/**
+ * Retrieves the favorite recipe's list saved by the logged-in user.
+ * Endpoint: GET /FavoritesRecipes
+ * Response: A List of favorite recipes.
+ */
+router.get("/FavoritesRecipes", async (req, res, next) => {
+  try {
+    if (!req.session.user_id) {
+      throw { status: 401, message: "No User Logged in." };
+    }
+    const user_id = req.session.user_id;
+    const recipes_id = await user_utils.getFavoriteRecipes(user_id);
+    if (recipes_id.length == 0) {
+      throw { status: 203, message: "This user has no favorite Recipes ." };
+    }
+    res.status(200).send(recipes_id);
+  } 
+  catch (error) {
+    console.log("2.3 user.js - line 129 get(/FavoritesRecipes) error = ",error.message);
+    next(error);
+  }
+});
 
-
-
-
+/**
+ * Removes a recipe from the favorites list of the logged-in user.
+ * Endpoint: DELETE /FavoritesRecipes
+ * Body Parameters: recipeId (ID of the recipe that is to be removed from favorites)
+ * Response: Success or failure message.
+ */
+router.delete("/FavoritesRecipes", async (req, res, next) => {
+  try {
+    if (!req.session.user_id) {
+      throw { status: 401, message: "No User Logged in." };
+    }
+    const user_id = req.session.user_id;
+    const recipe_id = req.body.recipeId;
+    await user_utils.removeFavorite(user_id, recipe_id);
+    res.status(200).send("The Recipe was successfully removed from favorites");
+  } catch (error) {
+    next(error);
+  }
+});
 // ===================================Favorites Recipes=========================================
 
 // ====================================ADD NEW RECIPE & Get Recipes========================================================
@@ -138,6 +196,34 @@ router.get("/MyRecipes", async (req, res, next) => {
 
 
 
+
+// ====================================MyRecipes===========================================================================
+
+/**
+ * Retrieves all recipes that were created by the logged-in user.
+ * Endpoint: GET /MyRecipes
+ * Response: A List of recipes created by the logged-in user.
+ */
+
+router.get("/MyRecipes", async (req, res, next) => {
+  try {
+    if (!req.session.user_id) {
+      throw { status: 401, message: "No User Logged in." };
+    }
+    const user_id = req.session.user_id;
+    const myRecipes_id = await user_utils.getMyRecipes(user_id);
+    if (myRecipes_id.length == 0) {
+      throw { status: 203, message: "This user has no Recipes ." };
+    }
+    const results = await recipe_utils.getRecipesPreview(myRecipes_id);
+    res.status(200).send(results);
+  } catch (error) {
+    next(error);
+  }
+});
+
+
+// ====================================MyRecipes===========================================================================
 
 
 
