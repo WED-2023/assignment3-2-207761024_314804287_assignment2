@@ -72,30 +72,74 @@ async function getMyRecipes(user_id) {
 
 // ==================================Add New Recipe & MyRecipes=========================================
 
+// ==================================Favorite Recipes=========================================
+
+/**
+ * Marks a recipe as a favorite for the specified user.
+ *
+ * @param {number} user_id - The ID of the user.
+ * @param {number} recipe_id - The ID of the recipe.
+ */
+async function markAsFavorite(user_id, recipe_id) {
+  if(recipe_id == undefined) return;
+  const checkIfFromDB = await DButils.execQuery(
+    `SELECT 1 FROM myrecipes WHERE recipe_id = '${recipe_id}'`
+  );
+
+  if (checkIfFromDB.length == 0) {
+    const RecipeType = "Spoonacular";
+    await DButils.execQuery(
+      `INSERT INTO userfavorites (userId, externalRecipeId, recipeSource) VALUES ('${user_id}', '${recipe_id}', '${RecipeType}')`
+    );
+  } else {
+    const RecipeType = "MyRecipes";
+    await DButils.execQuery(
+      `INSERT INTO userfavorites (userId, recipeId, recipeSource) VALUES ('${user_id}', '${recipe_id}', '${RecipeType}')`
+    );
+  }
+}
+
+async function getFavoriteRecipes(user_id){
+    const recipes_id = await DButils.execQuery(`select recipeId from userfavorites where userId='${user_id}'`);
+    return recipes_id.map(row => row.recipeId);
+}
+
+async function removeFavorite(user_id, recipe_id) {
+  await DButils.execQuery(
+    `DELETE FROM userfavorites WHERE userId = '${user_id}' AND recipeId = '${recipe_id}'`
+  );
+}
+
+// ==================================Favorite Recipes=========================================
+
+// ==================================Family Recipes=========================================
+
+async function addFamilyRecipe(user_id, recipeId, familyMember, relation, inventor, bestEvent, tips, howTo) {
+  await DButils.execQuery(
+    `INSERT INTO familyrecipes
+      (user_id, recipe_id, family_member, relation, inventor, best_event, tips, how_to)
+     VALUES ('${user_id}', '${recipeId}', '${familyMember}', '${relation}', '${inventor}', '${bestEvent}', '${tips}', '${howTo}')`
+  );
+}
+
+async function getFamilyRecipes(user_id) {
+  const recipes = await DButils.execQuery(
+    `SELECT * FROM familyrecipes WHERE user_id = '${user_id}' ORDER BY created_at DESC`
+  );
+  return recipes;
+}
+
+// ==================================Family Recipes=========================================
 
 
 
-
-
-
-
-
-
-// async function markAsFavorite(user_id, recipe_id){
-//     await DButils.execQuery(`insert into FavoriteRecipes values ('${user_id}',${recipe_id})`);
-// }
-
-// async function getFavoriteRecipes(user_id){
-//     const recipes_id = await DButils.execQuery(`select recipe_id from FavoriteRecipes where user_id='${user_id}'`);
-//     return recipes_id;
-// }
-
-
-
-// exports.markAsFavorite = markAsFavorite;
-// exports.getFavoriteRecipes = getFavoriteRecipes;
+exports.markAsFavorite = markAsFavorite;
+exports.getFavoriteRecipes = getFavoriteRecipes;
+exports.removeFavorite = removeFavorite;
 exports.updateLastViewed = updateLastViewed;
 exports.getLastViewedRecipes = getLastViewedRecipes;
 exports.getAllLastViewedRecipes = getAllLastViewedRecipes;
 exports.addNewRecipe = addNewRecipe;
 exports.getMyRecipes = getMyRecipes;
+exports.addFamilyRecipe = addFamilyRecipe;
+exports.getFamilyRecipes = getFamilyRecipes;

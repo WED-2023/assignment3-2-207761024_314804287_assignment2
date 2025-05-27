@@ -293,7 +293,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/RecipePreview'
-  /{recipe_id}:
+  /recipe/{recipe_id}:
     get:
       tags:
       - Recipes

@@ -105,13 +105,14 @@ router.get("/FavoritesRecipes", async (req, res, next) => {
     }
     const user_id = req.session.user_id;
     const recipes_id = await user_utils.getFavoriteRecipes(user_id);
-    if (recipes_id.length == 0) {
-      throw { status: 203, message: "This user has no favorite Recipes ." };
+    if (recipes_id.length === 0) {
+      return res.status(200).send([]); 
     }
-    res.status(200).send(recipes_id);
+    const results = await recipes_utils.getRecipesPreview(recipes_id);
+    res.status(200).send(results);
   } 
   catch (error) {
-    console.log("2.3 user.js - line 129 get(/FavoritesRecipes) error = ",error.message);
+    console.log("error = ",error.message);
     next(error);
   }
 });
@@ -194,91 +195,59 @@ router.get("/MyRecipes", async (req, res, next) => {
   }
 });
 
+// ====================================ADD NEW RECIPE & Get Recipes========================================================
 
+// ====================================Family Recipes========================================================
 
-
-// ====================================MyRecipes===========================================================================
-
-/**
- * Retrieves all recipes that were created by the logged-in user.
- * Endpoint: GET /MyRecipes
- * Response: A List of recipes created by the logged-in user.
- */
-
-router.get("/MyRecipes", async (req, res, next) => {
+router.post("/FamilyRecipes", async (req, res, next) => {
   try {
-    if (!req.session.user_id) {
+    if (!req.session.user_id)
       throw { status: 401, message: "No User Logged in." };
+
+    const { recipeId, familyMember, relation, inventor, bestEvent, tips, howTo } = req.body;
+    if (
+      !recipeId ||
+      !familyMember ||
+      !relation ||
+      !inventor ||
+      !bestEvent ||
+      !tips ||
+      !howTo
+    ) {
+      throw { status: 400, message: "Invalid input: Missing required fields." };
     }
-    const user_id = req.session.user_id;
-    const myRecipes_id = await user_utils.getMyRecipes(user_id);
-    if (myRecipes_id.length == 0) {
-      throw { status: 203, message: "This user has no Recipes ." };
-    }
-    const results = await recipe_utils.getRecipesPreview(myRecipes_id);
-    res.status(200).send(results);
+
+    await user_utils.addFamilyRecipe(
+      req.session.user_id,
+      recipeId,
+      familyMember,
+      relation,
+      inventor,
+      bestEvent,
+      tips,
+      howTo
+    );
+
+    res.status(201).send({ message: "Family recipe added successfully" });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/FamilyRecipes", async (req, res, next) => {
+  try {
+    if (!req.session.user_id)
+      throw { status: 401, message: "No User Logged in." };
+
+    const recipes = await user_utils.getFamilyRecipes(req.session.user_id);
+    res.status(200).send(recipes);
   } catch (error) {
     next(error);
   }
 });
 
 
-// ====================================MyRecipes===========================================================================
-
-
-
-
-
-
-// ====================================ADD NEW RECIPE & Get Recipes========================================================
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// /**
-//  * This path gets body with recipeId and save this recipe in the favorites list of the logged-in user
-//  */
-// router.post('/favorites', async (req,res,next) => {
-//   try{
-//     const user_id = req.session.user_id;
-//     const recipe_id = req.body.recipeId;
-//     await user_utils.markAsFavorite(user_id,recipe_id);
-//     res.status(200).send("The Recipe successfully saved as favorite");
-//     } catch(error){
-//     next(error);
-//   }
-// })
-
-// /**
-//  * This path returns the favorites recipes that were saved by the logged-in user
-//  */
-// router.get('/favorites', async (req,res,next) => {
-//   try{
-//     const user_id = req.session.user_id;
-//     let favorite_recipes = {};
-//     const recipes_id = await user_utils.getFavoriteRecipes(user_id);
-//     let recipes_id_array = [];
-//     recipes_id.map((element) => recipes_id_array.push(element.recipe_id)); //extracting the recipe ids into array
-//     const results = await recipe_utils.getRecipesPreview(recipes_id_array);
-//     res.status(200).send(results);
-//   } catch(error){
-//     next(error); 
-//   }
-// });
+// ====================================Family Recipes========================================================
 
 
 

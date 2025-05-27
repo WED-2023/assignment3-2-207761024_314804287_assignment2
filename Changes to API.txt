@@ -1,0 +1,40 @@
+Changes to API:
+
+Addition:
+  /FamilyRecipes:
+    post:
+      tags: 
+        - Users
+      summary: Add new family recipe for the logged-in user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                recipeId: { type: integer }
+                familyMember: { type: string }
+                relation: { type: string }
+                inventor: { type: string }
+                bestEvent: { type: string }
+                tips: { type: string }
+                howTo: { type: string }
+      responses:
+        201:
+          description: Family recipe added successfully
+        400:
+          description: Invalid input
+        401:
+          description: No user logged in
+
+    get:
+      tags: 
+        - Users
+      summary: Get all family recipes for the logged-in user
+      responses:
+        200:
+          description: List of family recipes
+        401:
+          description: No user logged in
+
