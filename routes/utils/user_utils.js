@@ -132,6 +132,128 @@ async function getFamilyRecipes(user_id) {
 // ==================================Family Recipes=========================================
 
 
+//====================================MyMeal=================================================
+
+/**
+ * Retrieves the list of recipes in the user's meal.
+ *
+ * @param {number} user_id - The ID of the user.
+ * @param {number|null} recipe_id - The ID of a specific recipe to retrieve (optional).
+ * @returns {Promise<Array>} - A promise that resolves to an array of recipe information.
+ */
+
+async function getMyMealRecipes(user_id, recipe_id = null) {
+  console.log("user_utils.js: recipe_id = ", recipe_id);
+  const recipes = recipe_id
+    ? await DButils.execQuery(`SELECT recipeId, externalRecipeId, recipeSource, recipeProgress FROM usermeal WHERE userId = '${user_id}' AND (recipeId = '${recipe_id}' OR externalRecipeId = '${recipe_id}')`)
+    : await DButils.execQuery(`SELECT recipeId, externalRecipeId, recipeSource, recipeProgress FROM usermeal WHERE userId = '${user_id}'`);
+
+  console.log("user_utils.js: before if (recipes.length == 0)");
+
+  if (recipes.length == 0) {
+    console.log("user_utils.js: inside if (recipes.length == 0)");
+    return [];
+  }
+  console.log("user_utils.js: after if (recipes.length == 0)");
+
+  const recipes_info = recipes.map((recipe) => {
+    let recipe_progress = null;
+    
+    // Check if recipeProgress is not null before parsing
+    if (recipe.recipeProgress) {
+      try {
+        recipe_progress = JSON.parse(recipe.recipeProgress);
+      } catch (error) {
+        console.error(`Error parsing recipeProgress for recipe_id: ${recipe.recipeId || recipe.externalRecipeId}`, error);
+        recipe_progress = null;  // Set to null if JSON parsing fails
+      }
+    }
+
+    if (recipe.recipeSource === "MyRecipes") {
+      return {
+        recipe_id: recipe.recipeId,
+        recipe_progress,
+      };
+    } else if (recipe.recipeSource === "Spoonacular") {
+      return {
+        recipe_id: recipe.externalRecipeId,
+        recipe_progress,
+      };
+    }
+  });
+
+  console.log("user_utils.js: recipes_info", recipes_info);
+  return recipes_info;
+}
+
+/**
+ * Adds a recipe to the user's meal.
+ *
+ * @param {number} user_id - The ID of the user.
+ * @param {number} recipe_id - The ID of the recipe to be added to the meal.
+ */
+async function addToMyMeal(user_id, recipe_id) {
+  if(recipe_id == undefined) return;
+  console.log("user_utils - 1");
+  const checkIfInUserMeal = await DButils.execQuery(
+    `SELECT * FROM usermeal WHERE userId = '${user_id}' AND (recipeId = '${recipe_id}' OR externalRecipeId = '${recipe_id}')`
+  );
+
+  if (checkIfInUserMeal.length != 0)
+    throw { status: 401, message: "Recipe is already in user meal." };
+
+  const checkIfFromDB = await DButils.execQuery(
+    `SELECT 1 FROM myrecipes WHERE recipe_id = '${recipe_id}'`
+  );
+  if (checkIfFromDB.length == 0) {
+    const RecipeType = "Spoonacular";
+    await DButils.execQuery(
+      `insert into usermeal (userId, externalRecipeId, recipeSource) values ('${user_id}','${recipe_id}','${RecipeType}')`
+    );
+  } else {
+    const RecipeType = "MyRecipes";
+    await DButils.execQuery(
+      `insert into usermeal (userId, recipeId, recipeSource) values ('${user_id}','${recipe_id}','${RecipeType}')`
+    );
+}
+}
+
+
+/**
+ * Removes a recipe from the user's meal.
+ *
+ * @param {number} user_id - The ID of the user.
+ * @param {number} recipe_id - The ID of the recipe to be removed from the meal.
+ */
+async function removeFromMyMeal(user_id, recipe_id) {
+  if(recipe_id == undefined) return;
+  console.log("removeFromMyMeal: recipe_id = ", recipe_id);
+  await DButils.execQuery(
+    `DELETE FROM usermeal WHERE userId = '${user_id}' AND (recipeId = '${recipe_id}' OR externalRecipeId = '${recipe_id}')`
+  );
+}
+
+/**
+ * Updates the progress of a recipe in the user's meal.
+ *
+ * @param {number} user_id - The ID of the user.
+ * @param {number} recipe_id - The ID of the recipe.
+ * @param {string} recipe_progress - The progress data of the recipe.
+ */
+async function updateRecipeProgressInMyMeal(user_id, recipe_id, recipe_progress) {
+  const checkIfInUserMeal = await DButils.execQuery(
+    `SELECT * FROM usermeal WHERE userId = '${user_id}' AND (recipeId = '${recipe_id}' OR externalRecipeId = '${recipe_id}')`
+    
+  );
+
+  if (checkIfInUserMeal.length == 0)
+    throw { status: 401, message: "Recipe ID is not in user meal." };
+
+  await DButils.execQuery(
+    `UPDATE usermeal SET recipeProgress = '${recipe_progress}' WHERE userId = '${user_id}' AND (recipeId = '${recipe_id}' OR externalRecipeId = '${recipe_id}')`
+  );
+}
+
 
 exports.markAsFavorite = markAsFavorite;
 exports.getFavoriteRecipes = getFavoriteRecipes;
@@ -143,3 +265,7 @@ exports.addNewRecipe = addNewRecipe;
 exports.getMyRecipes = getMyRecipes;
 exports.addFamilyRecipe = addFamilyRecipe;
 exports.getFamilyRecipes = getFamilyRecipes;
+exports.removeFromMyMeal = removeFromMyMeal;
+exports.addToMyMeal = addToMyMeal;
+exports.getMyMealRecipes = getMyMealRecipes;
+exports.updateRecipeProgressInMyMeal = updateRecipeProgressInMyMeal;
