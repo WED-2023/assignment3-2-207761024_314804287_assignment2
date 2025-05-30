@@ -177,6 +177,9 @@ router.post("/addNewRecipe", async (req, res, next) => {
   }
 });
 
+// ====================================ADD NEW RECIPE & Get Recipes========================================================
+
+
 // ====================================MyRecipes===========================================================================
 router.get("/MyRecipes", async (req, res, next) => {
   try {
@@ -205,37 +208,39 @@ router.get("/MyRecipes", async (req, res, next) => {
  * Response: List of recipes in the user's meal.
  */
 
+// user.js
 router.get("/MyMeal", async (req, res, next) => {
   try {
     if (!req.session.user_id) {
       throw { status: 401, message: "No User Logged in." };
     }
     const user_id = req.session.user_id;
-    console.log("user_id = ", user_id);
+    // 1️⃣ fetch raw meal rows
     const recipes_info = await user_utils.getMyMealRecipes(user_id);
-    if (recipes_info.length == 0) {
-      throw { status: 203, message: "This user has no recipes in his meal." };
+    if (recipes_info.length === 0) {
+      return res.status(200).send([]);  // no recipes → empty array
     }
+
+    // 2️⃣ pluck out just the IDs (we know every entry has recipe_id)
     const recipes_id = recipes_info
-    .filter((recipe) => !(recipe.recipeId === 'undefined' && recipe.externalRecipeId === 'undefined'))
-    .map((recipe) => {
-      return recipe.recipe_id;
-    });
+      .map(r => r.recipe_id)           // [ '100000100', ... ]
+      .filter(id => id != null);       // drop any nulls, just in case
 
-    // Get the recipe previews
-    const recipePreviews = await recipe_utils.getRecipesPreview(recipes_id);
+    // 3️⃣ fetch previews
+    const recipePreviews = await recipes_utils.getRecipesPreview(recipes_id);
 
-    // Merge recipe progress into the recipe previews
+    // 4️⃣ merge back progress
     const results = await user_utils.fetchRecipeProgress(
       recipes_info,
       recipePreviews
     );
     res.status(200).send(results);
   }
-   catch (error) {
+  catch (error) {
     next(error);
   }
 });
+
 
 /**
  * Adds a recipe to the user's meal.
@@ -246,19 +251,14 @@ router.get("/MyMeal", async (req, res, next) => {
 
 router.post("/MyMeal", async (req, res, next) => {
   try {
-    console.log("1");
     if (!req.session.user_id) {
       throw { status: 401, message: "No User Logged in." };
     }
-    console.log("2");
     const user_id = req.session.user_id;
     const recipe_id = req.body.recipeId;
-    console.log("3");
     console.log("user id = ", user_id, " recipe_id= ", recipe_id);
     await user_utils.addToMyMeal(user_id, recipe_id);
-    console.log("4");
     res.status(200).send("The Recipe successfully add to user meal.");
-    console.log("5");
   }
    catch (error) {
     next(error);
@@ -329,7 +329,10 @@ router.delete("/MyMeal", async (req, res, next) => {
     }
     const user_id = req.session.user_id;
     const recipe_id = req.body.recipeId;
-    await user_utils.removeFromMyMeal(user_id, recipe_id);
+    const remove = await user_utils.removeFromMyMeal(user_id, recipe_id);
+    if (remove === "Not Found") {
+      return res.status(404).send("Recipe not found in user's meal");
+    }
     res.status(200).send("The Recipe successfully removed from user meal");
   }
    catch (error) {
@@ -342,7 +345,6 @@ router.delete("/MyMeal", async (req, res, next) => {
 
 
 
-// ====================================ADD NEW RECIPE & Get Recipes========================================================
 
 
 

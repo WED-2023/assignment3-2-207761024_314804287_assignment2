@@ -134,6 +134,19 @@ async function getFamilyRecipes(user_id) {
 
 //====================================MyMeal=================================================
 
+async function fetchRecipeProgress(recipes_info, recipePreviews) {
+  return recipePreviews.map((recipePreview) => {
+    const recipe_info = recipes_info.find(
+      (recipe) => recipe.recipe_id == recipePreview.id
+    );
+    return {
+      ...recipePreview,
+      recipe_progress: recipe_info ? recipe_info.recipe_progress : null,
+    };
+  });
+}
+
+
 /**
  * Retrieves the list of recipes in the user's meal.
  *
@@ -227,8 +240,15 @@ async function addToMyMeal(user_id, recipe_id) {
  */
 async function removeFromMyMeal(user_id, recipe_id) {
   if(recipe_id == undefined) return;
-  console.log("removeFromMyMeal: recipe_id = ", recipe_id);
-  await DButils.execQuery(
+  console.log("removeFromMyMeal: recipeId = ", recipe_id);
+
+  const checkIfFromDB = await DButils.execQuery(
+    `SELECT 1 FROM usermeal WHERE recipeId = '${recipe_id}' OR externalRecipeId = '${recipe_id}'` // Check if the recipe exists in the user's meal
+  );
+  if (checkIfFromDB.length == 0) {
+    return "Not Found";
+  }
+  else await DButils.execQuery(
     `DELETE FROM usermeal WHERE userId = '${user_id}' AND (recipeId = '${recipe_id}' OR externalRecipeId = '${recipe_id}')`
   );
 }
@@ -265,6 +285,7 @@ exports.addNewRecipe = addNewRecipe;
 exports.getMyRecipes = getMyRecipes;
 exports.addFamilyRecipe = addFamilyRecipe;
 exports.getFamilyRecipes = getFamilyRecipes;
+exports.fetchRecipeProgress = fetchRecipeProgress;
 exports.removeFromMyMeal = removeFromMyMeal;
 exports.addToMyMeal = addToMyMeal;
 exports.getMyMealRecipes = getMyMealRecipes;
