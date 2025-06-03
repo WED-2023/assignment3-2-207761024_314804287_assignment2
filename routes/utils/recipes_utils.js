@@ -156,11 +156,6 @@ async function getRecipeFullInformation(recipe_id, fromDB) {
 
 
 
-
-
-
-
-
 // ====================== Recipe /{recipe_id} ========================
 // ====================== Recipes Preview ========================
 
@@ -188,7 +183,6 @@ async function getRecipeDetails(recipe_id, is_search = false) {
   const fromDB = recipe_info.fromDB;
 
   if (fromDB && !is_search) {
-    // Return recipe details from the database
     let {
       recipe_id,
       title,

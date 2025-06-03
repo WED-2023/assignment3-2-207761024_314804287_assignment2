@@ -22,6 +22,18 @@ router.use(async function (req, res, next) {
 
 
 // ==================================Last Viewed Recipes=========================================
+/**
+  * This route allows users to save a recipe as last viewed.
+  * It checks if the user is logged in by verifying the session user_id.
+  * If the user is logged in, it retrieves the user_id from the session
+  * and the recipe_id from the request body.
+  * It then calls the updateLastViewed function from user_utils to save the recipe as last viewed.
+  * If successful, it responds with a 200 status and a success message.
+  * * @route POST /LastViewedRecipes
+  * * @returns {Object} - A success message indicating the recipe was saved as last viewed.
+  * * * @throws {Object} - Throws a 401 error if no user is logged in.
+  * * * @throws {Object} - Throws an error if there is an issue with saving the recipe as last viewed.
+ */
 router.post("/LastViewedRecipes", async (req, res, next) => {
   try {
     if (!req.session.user_id) {
@@ -199,8 +211,7 @@ router.get("/MyRecipes", async (req, res, next) => {
 });
 // ====================================MyRecipes===========================================================================
 
-//==================================MyMeal=================================================================================
-
+//==================================Bonus - MyMeal=================================================================================
 
 /**
  * Retrieves the recipes in the user's meal.
@@ -215,21 +226,17 @@ router.get("/MyMeal", async (req, res, next) => {
       throw { status: 401, message: "No User Logged in." };
     }
     const user_id = req.session.user_id;
-    // 1️⃣ fetch raw meal rows
     const recipes_info = await user_utils.getMyMealRecipes(user_id);
     if (recipes_info.length === 0) {
-      return res.status(200).send([]);  // no recipes → empty array
+      return res.status(200).send([]);  
     }
 
-    // 2️⃣ pluck out just the IDs (we know every entry has recipe_id)
     const recipes_id = recipes_info
-      .map(r => r.recipe_id)           // [ '100000100', ... ]
-      .filter(id => id != null);       // drop any nulls, just in case
+      .map(r => r.recipe_id)           
+      .filter(id => id != null);       
 
-    // 3️⃣ fetch previews
     const recipePreviews = await recipes_utils.getRecipesPreview(recipes_id);
 
-    // 4️⃣ merge back progress
     const results = await user_utils.fetchRecipeProgress(
       recipes_info,
       recipePreviews
@@ -341,60 +348,95 @@ router.delete("/MyMeal", async (req, res, next) => {
 });
 
 
-//========================================MyMeal=================================
+//==================================Bonus - MyMeal=================================================================================
+
+//==================================Bonus - Recipe Making Process=================================================================================
+
+/**
+ * Retrieves the making progress of a specific recipe in the user's meal.
+ * Endpoint: GET /RecipeMaking
+ * Response: Progress details of the specific recipe.
+ */
+router.get("/RecipeMaking", async (req, res, next) => {
+  try {
+    if (!req.session.user_id) {
+      throw { status: 401, message: "No User Logged in." };
+    }
+    const user_id = req.session.user_id;
+    const recipe_id = req.params.recipeId;
+    console.log("user.js: recipe_id = ", recipe_id);
+    const recipe_info = await user_utils.getMyMealRecipes(user_id, recipe_id);
+    const recipePreviews = await recipe_utils.getRecipesPreview([recipe_id]);
+    const results = await user_utils.fetchRecipeProgress(
+      recipe_info,
+      recipePreviews
+    );
+    res.status(200).send(results);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+  * Updates the making progress of a specific recipe in the user's meal.
+  * Endpoint: PUT /RecipeMaking
+  * Body Parameters: recipeId (ID of the recipe), recipe_progress (Array of progress steps)
+  * Response: Success or failure message.
+*/
+router.put("/RecipeMaking", async (req, res, next) => {
+  try {
+    if (!req.session.user_id) {
+      throw { status: 401, message: "No User Logged in." };
+    }
+    console.log(
+      "user_id = ",
+      req.session.user_id,
+      " recipe_id = ",
+      req.body.recipeId,
+      " recipe_progress = ",
+      req.body.recipe_progress
+    );
+    const user_id = req.session.user_id;
+    const recipe_id = req.body.recipeId;
+    const recipe_progress = "[" + req.body.recipe_progress.toString() + "]";
+    await user_utils.updateRecipeProgressInMyMeal(
+      user_id,
+      recipe_id,
+      recipe_progress
+    );
+    res
+      .status(200)
+      .send("You have successfully update the recipe making progress.");
+  } catch (error) {
+    next(error);
+  }
+});
 
 
+/**
+ * Retrieves the making progress of a specific recipe in the user's meal.
+ * Endpoint: GET /RecipeMakingProgress/:recipeId
+ * Response: Progress details of the specific recipe.
+ */
+router.get("/RecipeMakingProgress/:recipeId", async (req, res, next) => {
+  try {
+    if (!req.session.user_id) {
+      throw { status: 401, message: "No User Logged in." };
+    }
+    const user_id = req.session.user_id;
+    const recipe_id = req.params.recipeId;
+    console.log("user.js: recipe_id = ", recipe_id);
+    const recipe_info = await user_utils.getMyMealRecipes(user_id, recipe_id);
+    if (recipe_info.length === 0) {
+      return res.status(404).send("Recipe not found in user's meal");
+    } else {
+      res.status(200).send(recipe_info[0]);
+    }
+  } catch (error) {
+    next(error);
+  }
+});
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// /**
-//  * This path gets body with recipeId and save this recipe in the favorites list of the logged-in user
-//  */
-// router.post('/favorites', async (req,res,next) => {
-//   try{
-//     const user_id = req.session.user_id;
-//     const recipe_id = req.body.recipeId;
-//     await user_utils.markAsFavorite(user_id,recipe_id);
-//     res.status(200).send("The Recipe successfully saved as favorite");
-//     } catch(error){
-//     next(error);
-//   }
-// })
-
-// /**
-//  * This path returns the favorites recipes that were saved by the logged-in user
-//  */
-// router.get('/favorites', async (req,res,next) => {
-//   try{
-//     const user_id = req.session.user_id;
-//     let favorite_recipes = {};
-//     const recipes_id = await user_utils.getFavoriteRecipes(user_id);
-//     let recipes_id_array = [];
-//     recipes_id.map((element) => recipes_id_array.push(element.recipe_id)); //extracting the recipe ids into array
-//     const results = await recipe_utils.getRecipesPreview(recipes_id_array);
-//     res.status(200).send(results);
-//   } catch(error){
-//     next(error); 
-//   }
-// });
-
-
-
+//==================================Bonus - Recipe Making Process=================================================================================
 
 module.exports = router;

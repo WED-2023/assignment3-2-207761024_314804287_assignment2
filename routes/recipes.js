@@ -4,17 +4,22 @@ const recipes_utils = require("./utils/recipes_utils");
 
 router.get("/", (req, res) => res.send("im here"));
 
-/**
- * This route searches for recipes based on various criteria.
+
+/** 
+ * This route handles searching for recipes based on various criteria.
  * It accepts the following query parameters:
  * - recipeName: The name of the recipe to search for.
- * - cuisine: The cuisine type to filter by.
- * - diet: The diet type to filter by.
- * - intolerance: The intolerance type to filter by.
+ * - cuisine: The type of cuisine to filter by.
+ * - diet: The type of diet to filter by.
+ * - intolerance: The type of food intolerance to filter by.
  * - number: The number of results to return (default is 5).
- * - sort: The sorting criteria for the results.
+ * - sort: The sorting criteria for the results (e.g., "popularity", "healthiness").
+ * It returns a list of recipes that match the search criteria.
+ * * @route GET /search
+ * * @returns {Array} - An array of recipe previews that match the search criteria.
+ * * @throws {Object} - Throws a 404 error if no recipes are found for the given search parameters.
+ * * @throws {Object} - Throws an error if there is an issue with the Spoonacular API or the search parameters.
  */
-
 router.get("/search", async (req, res, next) => {
   try {
     const recipeName = req.query.recipeName;
@@ -39,9 +44,13 @@ router.get("/search", async (req, res, next) => {
 
 
 /**
- * This route returns a specified number of random recipes.
- * It accepts the following query parameter:
- * - number: The number of random recipes to return (default is 3).
+  * This route provides a random selection of recipes.
+  * It accepts the following query parameter:
+  * - number: The number of random recipes to return (default is 3).
+  * It returns a list of random recipes.
+  * * @route GET /random
+  * * @returns {Array} - An array of random recipe previews.
+  * * @throws {Object} - Throws an error if there is an issue with the Spoonacular API or retrieving random recipes.
  */
 router.get("/random", async (req, res, next) => {
   try {
@@ -55,9 +64,13 @@ router.get("/random", async (req, res, next) => {
 
 
 /**
- * This route provides a full information of a specific recipe by its ID.
- * It accepts the following route parameter:
- * - recipe_id: The ID of the recipe to get a preview for.
+  * This route provides detailed information about a specific recipe.
+  * It accepts the following URL parameter:
+  * - recipe_id: The ID of the recipe to get detailed information for.
+  * It returns detailed information about the specified recipe, including ingredients, instructions, and other relevant data.
+  * * @route GET /:recipe_id
+  * * @returns {Object} - An object containing detailed information about the specified recipe.
+  * * * @throws {Object} - Throws an error if there is an issue with the Spoonacular API or retrieving the recipe information.
  */
 router.get("/:recipe_id", async (req, res, next) => {
   try {
@@ -70,9 +83,13 @@ router.get("/:recipe_id", async (req, res, next) => {
 });
 
 /**
- * This route provides a preview of multiple recipes based on their IDs.
- * It accepts the following request body parameter:
- * - recipes_id: An array of recipe IDs to get previews for.
+  * This route provides a preview of recipes based on their IDs.
+  * It accepts the following field in the request body:
+  * - recipes_id: An array of recipe IDs for which to get previews.
+  * It returns a list of recipe previews for the specified recipe IDs.
+  * * @route POST /RecipesPreview
+  * * @returns {Array} - An array of recipe previews for the specified recipe IDs.
+  * * * @throws {Object} - Throws an error if there is an issue with retrieving the recipe previews or if the recipe IDs are invalid.
  */
 router.post("/RecipesPreview", async (req, res, next) => {
   try {

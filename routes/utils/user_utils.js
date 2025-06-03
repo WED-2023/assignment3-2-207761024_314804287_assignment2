@@ -132,7 +132,7 @@ async function getFamilyRecipes(user_id) {
 // ==================================Family Recipes=========================================
 
 
-//====================================MyMeal=================================================
+//====================================Bonus - MyMeal & Recipe Making Progress=================================================
 
 async function fetchRecipeProgress(recipes_info, recipePreviews) {
   return recipePreviews.map((recipePreview) => {
@@ -273,6 +273,10 @@ async function updateRecipeProgressInMyMeal(user_id, recipe_id, recipe_progress)
     `UPDATE usermeal SET recipeProgress = '${recipe_progress}' WHERE userId = '${user_id}' AND (recipeId = '${recipe_id}' OR externalRecipeId = '${recipe_id}')`
   );
 }
+
+//====================================Bonus - MyMeal & Recipe Making Progress=================================================
+
+
 
 
 exports.markAsFavorite = markAsFavorite;
