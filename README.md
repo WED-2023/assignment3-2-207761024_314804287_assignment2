@@ -23,7 +23,7 @@ A full-stack web application that allows users to discover, save, and cook recip
   - Reorder or remove recipes within your plan  
   - Persisted per user in the database  
 
-- **Cooking Progress**  
+- **Making Progress**  
   - Fetch analyzed instructions (step-by-step cooking guide)  
   - Save and update user’s progress through each step  
   - Adjust ingredient quantities based on servings  
@@ -63,8 +63,8 @@ A full-stack web application that allows users to discover, save, and cook recip
 │   └── Select.sql              # Table definitions and initial queries
 │
 ├── index.html                  # Auto-generated API documentation (Swagger-style)
-├── RecipeWebsiteProjectAPI.yaml# OpenAPI specification (if needed)
-├── .env.example                # Sample environment variables
+├── RecipeWebsiteProjectAPI.yaml# OpenAPI specification 
+├── .env                        # environment variables file
 ├── package.json
 └── README.md                   # (This file)
 ```
@@ -83,7 +83,7 @@ A full-stack web application that allows users to discover, save, and cook recip
 
 1. **Clone the Repository**  
    ```bash
-   git clone https://github.com/your-username/RecipeWebsiteProjectAPI.git
+   git clone https://github.com/WED-2023/assignment3-2-207761024_314804287_assignment2
    cd RecipeWebsiteProjectAPI
    ```
 
