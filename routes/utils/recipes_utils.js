@@ -45,6 +45,17 @@ async function getRandomRecipes(number = 4) {
 // ====================== Random Recipes ========================
 // ====================== Recipe /{recipe_id} ========================
 
+/**
+  * Fetch full information about a recipe by its ID, either from the database or Spoonacular API.
+  * @param {number} recipe_id - The ID of the recipe to fetch.
+  * @return {Promise<Object>} - A promise that resolves to an object containing full recipe information.
+  * @throws {Object} - Throws an error if the recipe is not found in either the database or Spoonacular API.
+  * @throws {Object} - Throws an error if there is an issue with fetching the recipe information.
+  * @throws {Object} - Throws an error if there is an issue with the database connection.
+  * @throws {Object} - Throws an error if there is an issue with the Spoonacular API.
+  * @throws {Object} - Throws an error if there is an issue with the recipe ID.
+  * @throws {Object} - Throws an error if the recipe ID is invalid.
+*/
 async function getRecipeFullInformationForAPI(recipe_id) {
   const checkIfFromDB = await DButils.execQuery(
     `SELECT 1 FROM myrecipes WHERE recipe_id = '${recipe_id}'`
@@ -121,9 +132,20 @@ async function getRecipeFullInformationForAPI(recipe_id) {
 
 
 // helper function - to get full recipe information
+/**
+ * Get full recipe information from the database or Spoonacular API.
+ * @param {number} recipe_id - The ID of the recipe to retrieve.
+ * @param {boolean} fromDB - Indicates if the request is from the database.
+ * @return {Promise<Object>} - A promise that resolves to the full recipe information.
+ * @throws {Object} - Throws an error if the recipe is not found in either the database or Spoonacular API.
+ * * @throws {Object} - Throws an error if there is an issue with fetching the recipe information.
+ * * * @throws {Object} - Throws an error if there is an issue with the database connection.
+ * * * @throws {Object} - Throws an error if there is an issue with the Spoonacular API.
+ * * * @throws {Object} - Throws an error if there is an issue with the recipe ID.
+ * * * @throws {Object} - Throws an error if the recipe ID is invalid.
+ * */
 async function getRecipeFullInformation(recipe_id, fromDB) {
   if (fromDB) {
-    // Fetch full recipe information from the database
     const recipe_information = (
       await DButils.execQuery(
         `SELECT * FROM myrecipes WHERE recipe_id = '${recipe_id}'`
@@ -144,8 +166,7 @@ async function getRecipeFullInformation(recipe_id, fromDB) {
 
     return recipe;
   } else {
-    // Fetch full recipe information from Spoonacular API
-    return await axios.get(`${api_domain}/${recipe_id}/information`, { // Corrected to use backticks
+    return await axios.get(`${api_domain}/${recipe_id}/information`, {
       params: {
         includeNutrition: false,
         apiKey: process.env.spooncular_apiKey,
@@ -159,7 +180,16 @@ async function getRecipeFullInformation(recipe_id, fromDB) {
 // ====================== Recipe /{recipe_id} ========================
 // ====================== Recipes Preview ========================
 
-
+/**
+ * Get a preview of recipes based on an array of recipe IDs.
+ * @param {Array<number>} recipes_id_array - An array of recipe IDs to get previews for.
+ * @param {boolean} is_search - Indicates if the request is from a search (default is false).
+ * * @returns {Promise<Array>} - A promise that resolves to an array of recipe previews.
+ * * @throws {Object} - Throws an error if there is an issue with retrieving the recipe previews or if the recipe IDs are invalid.
+ * * This function retrieves recipe details for each ID in the provided array.
+ * * It uses the `getRecipeDetails` helper function to fetch the details for each recipe ID.
+ * * The results are collected in an array and returned.
+ */
 async function getRecipesPreview(recipes_id_array, is_search = false) {
   const recipesDetailsArray = [];
   const recipeDetailsPromises = recipes_id_array.map(async (recipe_id) => {
@@ -174,6 +204,13 @@ async function getRecipesPreview(recipes_id_array, is_search = false) {
 }
 
 //Helper function to get recipe details for preview
+/**
+ * Get details of a recipe by its ID, either from the database or Spoonacular API.
+ * @param {number} recipe_id - The ID of the recipe to retrieve.
+ * @param {boolean} is_search - Indicates if the request is from a search (default is false).
+ * @returns {Promise<Object>} - A promise that resolves to an object containing recipe details.
+ * @throws {Error} - Throws an error if the recipe ID is invalid or if there is an issue with fetching the recipe information.
+ */
 async function getRecipeDetails(recipe_id, is_search = false) {
   if(!recipe_id) {
     throw new Error("invalid recipe id : ",recipe_id);

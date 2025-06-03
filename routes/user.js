@@ -49,6 +49,19 @@ router.post("/LastViewedRecipes", async (req, res, next) => {
 });
 
 
+/**
+ * * This route checks if the user is logged in by verifying the session user_id.
+ * If the user is logged in, it retrieves the user_id from the session
+ * and calls the getLastViewedRecipes function from user_utils to get the last viewed recipes.
+ * It then calls the getRecipesPreview function from recipes_utils to get the preview of those recipes.
+ * If successful, it responds with a 200 status and the list of last viewed recipes.
+ * * If the user is not logged in, it throws a 401 error with a message indicating that no user is logged in.
+ * * If there is an issue with retrieving the last viewed recipes, it throws an error that is passed to the next middleware.
+ * * @route GET /LastViewedRecipes
+ * * @returns {Array} - An array of last viewed recipes with their previews.
+ * * * @throws {Object} - Throws a 401 error if no user is logged in.
+ * * * @throws {Object} - Throws an error if there is an issue with retrieving the last viewed recipes.
+  */
 router.get("/LastViewedRecipes", async (req, res, next) => {
   try {
     if (!req.session.user_id) {
@@ -63,6 +76,20 @@ router.get("/LastViewedRecipes", async (req, res, next) => {
   }
 });
 
+
+/**
+ * * This route checks if a specific recipe is in the user's last viewed recipes.
+ * It retrieves the user_id from the session and the recipe_id from the query parameters.
+ * It then calls the getAllLastViewedRecipes function from user_utils to get all last viewed recipes for the user.
+ * It checks if the recipe_id is present in the list of last viewed recipes.
+ * If the recipe_id is found, it responds with a 200 status and an object indicating that the recipe is in the last viewed list.
+ * * If the user is not logged in, it throws a 401 error with a message indicating that no user is logged in.
+ * * If there is an issue with retrieving the last viewed recipes, it throws an error that is passed to the next middleware.
+ * * @route GET /IsLastViewedRecipe
+ * * @returns {Object} - An object indicating whether the recipe is in the last viewed list.
+ * * * @throws {Object} - Throws a 401 error if no user is logged in.
+ * * * @throws {Object} - Throws an error if there is an issue with retrieving the last viewed recipes.
+ * */
 router.get("/IsLastViewedRecipe", async (req, res, next) => {
   try {
     if (!req.session.user_id) {
@@ -83,11 +110,17 @@ router.get("/IsLastViewedRecipe", async (req, res, next) => {
 
 // ===================================Favorites Recipes=========================================
 /**
- * Adds a recipe to the favorites list of the logged-in user.
- * Endpoint: POST /FavoritesRecipes
- * Body Parameters: recipeId (ID of the recipe to be added to favorites)
- * Response: Success or failure message.
- */
+  * This route allows users to mark a recipe as favorite.
+  * It checks if the user is logged in by verifying the session user_id.
+  * If the user is logged in, it retrieves the user_id from the session
+  * and the recipe_id from the request body.
+  * It then calls the markAsFavorite function from user_utils to save the recipe as favorite.
+  * If successful, it responds with a 200 status and a success message.
+  * * @route POST /FavoritesRecipes
+  * * @returns {Object} - A success message indicating the recipe was saved as favorite.
+  * * * @throws {Object} - Throws a 401 error if no user is logged in.
+  * * * @throws {Object} - Throws an error if there is an issue with saving the recipe as favorite.
+  * */
 router.post("/FavoritesRecipes", async (req, res, next) => {
   try {
     if (!req.session.user_id) {
@@ -106,9 +139,17 @@ router.post("/FavoritesRecipes", async (req, res, next) => {
 });
 
 /**
- * Retrieves the favorite recipe's list saved by the logged-in user.
- * Endpoint: GET /FavoritesRecipes
- * Response: A List of favorite recipes.
+  * This route allows users to get their favorite recipes.
+  * It checks if the user is logged in by verifying the session user_id.
+  * If the user is logged in, it retrieves the user_id from the session
+  * and calls the getFavoriteRecipes function from user_utils to get the user's favorite recipes.
+  * If successful, it responds with a 200 status and the list of favorite recipes.
+  * * If the user is not logged in, it throws a 401 error with a message indicating that no user is logged in.
+  * * If there are no favorite recipes, it throws a 203 error with a message indicating that the user has no favorite recipes.
+  * * @route GET /FavoritesRecipes
+  * * @returns {Array} - A list of favorite recipes.
+  * * @throws {Object} - Throws a 401 error if no user is logged in.
+  * * @throws {Object} - Throws a 203 error if the user has no favorite recipes.
  */
 router.get("/FavoritesRecipes", async (req, res, next) => {
   try {
@@ -129,10 +170,15 @@ router.get("/FavoritesRecipes", async (req, res, next) => {
 });
 
 /**
- * Removes a recipe from the favorites list of the logged-in user.
- * Endpoint: DELETE /FavoritesRecipes
- * Body Parameters: recipeId (ID of the recipe that is to be removed from favorites)
- * Response: Success or failure message.
+  * This route allows users to remove a recipe from their favorites.
+  * It checks if the user is logged in by verifying the session user_id.
+  * If the user is logged in, it retrieves the user_id from the session
+  * and the recipe_id from the request body.
+  * It then calls the removeFavorite function from user_utils to remove the recipe from favorites.
+  * If successful, it responds with a 200 status and a success message.
+  * * * @route DELETE /FavoritesRecipes
+  * * * @returns {Object} - A success message indicating the recipe was removed from favorites.
+  * * * @throws {Object} - Throws a 401 error if no user is logged in.
  */
 router.delete("/FavoritesRecipes", async (req, res, next) => {
   try {
@@ -150,6 +196,19 @@ router.delete("/FavoritesRecipes", async (req, res, next) => {
 // ===================================Favorites Recipes=========================================
 
 // ====================================ADD NEW RECIPE & Get Recipes========================================================
+/**
+  * This route allows users to add a new recipe.
+  * It checks if the user is logged in by verifying the session user_id. 
+  * If the user is logged in, it retrieves the user_id from the session
+  * and the recipe details from the request body.
+  * It then calls the addNewRecipe function from user_utils to save the new recipe.
+  * If successful, it responds with a 201 status and a success message.
+  * * * @route POST /addNewRecipe
+  * * * @returns {Object} - A success message indicating the recipe was created successfully.
+  * * * @throws {Object} - Throws a 401 error if no user is logged in.  
+  * * * * @throws {Object} - Throws a 401 error if the input is invalid or required fields are missing.
+  * * * @throws {Object} - Throws an error if there is an issue with adding the new recipe.
+*/
 router.post("/addNewRecipe", async (req, res, next) => {
   try {
 
@@ -193,6 +252,18 @@ router.post("/addNewRecipe", async (req, res, next) => {
 
 
 // ====================================MyRecipes===========================================================================
+/**
+ * This route retrieves the recipes created by the logged-in user.
+ * Endpoint: GET /MyRecipes
+ * Response: List of recipes created by the user.
+ * * If the user is not logged in, it throws a 401 error with a message indicating that the user is not logged in.
+ * * If the user has no recipes, it returns an empty array with a 200 status.
+ * * If the user has recipes, it retrieves the recipe previews and sends them in the response.
+ * * @route GET /MyRecipes
+ * * @returns {Array} - An array of recipes created by the user.
+ * * * @throws {Object} - Throws a 401 error if no user is logged in.
+ * * * @throws {Object} - Throws an error if there is an issue with retrieving the user's recipes. 
+*/
 router.get("/MyRecipes", async (req, res, next) => {
   try {
     if (!req.session.user_id) {
@@ -214,12 +285,14 @@ router.get("/MyRecipes", async (req, res, next) => {
 //==================================Bonus - MyMeal=================================================================================
 
 /**
- * Retrieves the recipes in the user's meal.
+ * This route retrieves the user's meal recipes.
  * Endpoint: GET /MyMeal
- * Response: List of recipes in the user's meal.
+ * Response: List of recipes in the user's meal with their progress.
+ * * @route GET /MyMeal
+ * * @returns {Array} - An array of recipes in the user's meal with their progress.
+ * * * @throws {Object} - Throws a 401 error if no user is logged in.
+ * * * @throws {Object} - Throws an error if there is an issue with retrieving the user's meal recipes.
  */
-
-// user.js
 router.get("/MyMeal", async (req, res, next) => {
   try {
     if (!req.session.user_id) {
@@ -250,10 +323,16 @@ router.get("/MyMeal", async (req, res, next) => {
 
 
 /**
- * Adds a recipe to the user's meal.
- * Endpoint: POST /MyMeal
- * Body Parameters: recipeId (ID of the recipe to be added to the meal)
- * Response: Success or failure message.
+  * This route allows users to add a recipe to their meal.
+  * It checks if the user is logged in by verifying the session user_id.
+  * If the user is logged in, it retrieves the user_id from the session
+  * and the recipe_id from the request body.
+  * It then calls the addToMyMeal function from user_utils to add the recipe to the user's meal.
+  * If successful, it responds with a 200 status and a success message.
+  * * * @route POST /MyMeal
+  * * * @returns {Object} - A success message indicating the recipe was added to the user's meal.
+  * * * @throws {Object} - Throws a 401 error if no user is logged in.
+  * * * @throws {Object} - Throws an error if there is an issue with adding the recipe to the user's meal.
  */
 
 router.post("/MyMeal", async (req, res, next) => {
@@ -273,10 +352,19 @@ router.post("/MyMeal", async (req, res, next) => {
 });
 
 /**
- * Updates the order of recipes in the user's meal.
- * Endpoint: PUT /MyMeal
- * Body Parameters: recipes_order_id (An Array of recipe IDs representing the new order)
- * Response: Success or failure message.
+  * This route allows users to add a recipe to their meal.
+  * It checks if the user is logged in by verifying the session user_id.
+  * If the user is logged in, it retrieves the user_id from the session
+  * and the recipes_order_id from the request body.
+  * It then retrieves the user's meal recipes and removes all existing recipes from the meal.
+  * It then iterates through the recipes_order_id and checks if each recipe exists in the user's meal.
+  * If a matching recipe is found, it adds the recipe back to the user's meal and updates its progress.
+  * If a recipe is not found, it throws an error.
+  * If successful, it responds with a 200 status and a success message indicating that the recipes were successfully reordered.
+  * * * @route PUT /MyMeal
+  * * * @returns {Object} - A success message indicating the recipes were successfully reordered.
+  * * * @throws {Object} - Throws a 401 error if no user is logged in.
+  * * * @throws {Object} - Throws an error if there is an issue with reordering the recipes in the user's meal.
  */
 
 router.put("/MyMeal", async (req, res, next) => {
@@ -323,10 +411,17 @@ router.put("/MyMeal", async (req, res, next) => {
 });
 
 /**
- * Removes a recipe from the user's meal.
- * Endpoint: DELETE /MyMeal
- * Body Parameters: recipeId (ID of the recipe to be removed from the meal)
+ * This route allows users to reorder their meal recipes.
+ * Endpoint: PUT /MyMeal
+ * Body Parameters: recipes_order_id (Array of recipe IDs in the desired order)
  * Response: Success or failure message.
+ * * * If the user is not logged in, it throws a 401 error with a message indicating that the user is not logged in.
+ * * * If the user has no recipes, it returns an empty array with a 200 status.
+ * * * If the user has recipes, it retrieves the recipe previews and sends them in the response.
+ * * * @route PUT /MyMeal
+ * * * @returns {Object} - A success message indicating the recipes were successfully reordered.
+ * * * * @throws {Object} - Throws a 401 error if no user is logged in.
+ * * * * @throws {Object} - Throws an error if there is an issue with reordering the recipes in the user's meal.
  */
 
 router.delete("/MyMeal", async (req, res, next) => {
@@ -353,9 +448,13 @@ router.delete("/MyMeal", async (req, res, next) => {
 //==================================Bonus - Recipe Making Process=================================================================================
 
 /**
- * Retrieves the making progress of a specific recipe in the user's meal.
+ * This route retrieves the making progress of a specific recipe in the user's meal.
  * Endpoint: GET /RecipeMaking
  * Response: Progress details of the specific recipe.
+ * * @route GET /RecipeMaking
+ * * @returns {Object} - An object containing the progress details of the specific recipe.
+ * * * * @throws {Object} - Throws a 401 error if no user is logged in.
+ * * * * @throws {Object} - Throws an error if there is an issue with retrieving the making progress of the recipe.
  */
 router.get("/RecipeMaking", async (req, res, next) => {
   try {
@@ -378,10 +477,16 @@ router.get("/RecipeMaking", async (req, res, next) => {
 });
 
 /**
-  * Updates the making progress of a specific recipe in the user's meal.
-  * Endpoint: PUT /RecipeMaking
-  * Body Parameters: recipeId (ID of the recipe), recipe_progress (Array of progress steps)
-  * Response: Success or failure message.
+  * This route allows users to update the making progress of a specific recipe in their meal.
+  * It checks if the user is logged in by verifying the session user_id.
+  * If the user is logged in, it retrieves the user_id from the session
+  * and the recipe_id and recipe_progress from the request body.
+  * It then calls the updateRecipeProgressInMyMeal function from user_utils to update the recipe's making progress.
+  * If successful, it responds with a 200 status and a success message.
+  * * * @route PUT /RecipeMaking
+  * * * @returns {Object} - A success message indicating the recipe making progress was updated successfully.
+  * * * * @throws {Object} - Throws a 401 error if no user is logged in.
+  * * * * @throws {Object} - Throws an error if there is an issue with updating the recipe making progress.
 */
 router.put("/RecipeMaking", async (req, res, next) => {
   try {
@@ -414,9 +519,17 @@ router.put("/RecipeMaking", async (req, res, next) => {
 
 
 /**
- * Retrieves the making progress of a specific recipe in the user's meal.
+ * This route retrieves the making progress of a specific recipe in the user's meal.
  * Endpoint: GET /RecipeMakingProgress/:recipeId
  * Response: Progress details of the specific recipe.
+ * * * If the user is not logged in, it throws a 401 error with a message indicating that the user is not logged in.
+ * * * If the recipe is not found in the user's meal, it returns a 404 status with a message indicating that the recipe was not found.
+ * * * If the recipe is found, it retrieves the recipe information and sends it in the response.
+ * * * @route GET /RecipeMakingProgress/:recipeId
+ * * @returns {Object} - An object containing the progress details of the specific recipe.
+ * * * * @throws {Object} - Throws a 401 error if no user is logged in.
+ * * * * * @throws {Object} - Throws a 404 error if the recipe is not found in the user's meal.
+ * * * * * @throws {Object} - Throws an error if there is an issue with retrieving the making progress of the recipe.
  */
 router.get("/RecipeMakingProgress/:recipeId", async (req, res, next) => {
   try {

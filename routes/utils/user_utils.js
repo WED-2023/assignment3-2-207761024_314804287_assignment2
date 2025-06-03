@@ -1,6 +1,15 @@
 const DButils = require("./DButils");
 
 // ==================================Last Viewed Recipes=========================================
+/**
+ * Updates the last viewed timestamp for a recipe for a specific user.
+ * If the recipe already exists in the last viewed table, it updates the timestamp.
+ * If the recipe does not exist, it inserts a new record with the current timestamp.
+ * * @param {number} user_id - The ID of the user.
+ * @param {number} recipe_id - The ID of the recipe.
+ * @returns {Promise<void>} - A promise that resolves when the operation is complete.
+ * @throws {Error} - Throws an error if there is an issue with the database operation.
+*/
 async function updateLastViewed(user_id, recipe_id) {
   const existingRecipeResult = await DButils.execQuery(
     `SELECT recipe_id FROM lastviewedrecipes WHERE user_id = '${user_id}' AND recipe_id = '${recipe_id}'`
@@ -18,6 +27,11 @@ async function updateLastViewed(user_id, recipe_id) {
   }
 }
 
+/**
+ * Retrieves the last viewed recipes for a specific user, ordered by the most recent view.
+ * @param {number} user_id - The ID of the user.
+ * @returns {Promise<Array>} - A promise that resolves to an array of recipe IDs.
+*/
 async function getLastViewedRecipes(user_id) {
   const recipes_id = await DButils.execQuery(
     `SELECT recipe_id FROM lastviewedrecipes WHERE user_id = '${user_id}' ORDER BY viewed_at DESC LIMIT 4`
@@ -25,6 +39,12 @@ async function getLastViewedRecipes(user_id) {
   return recipes_id.map((row) => row.recipe_id);
 }
 
+/**
+ * Retrieves all last viewed recipes for a specific user.
+ * @param {number} user_id - The ID of the user.
+ * @returns {Promise<Array>} - A promise that resolves to an array of recipe IDs.
+ * @throws {Error} - Throws an error if there is an issue with the database operation.
+*/
 async function getAllLastViewedRecipes(user_id) {
   const recipes_id = await DButils.execQuery(
     `SELECT recipe_id FROM lastviewedrecipes WHERE user_id = '${user_id}'`
@@ -35,6 +55,29 @@ async function getAllLastViewedRecipes(user_id) {
 
 
 // ==================================Add New Recipe & MyRecipes=========================================
+/**
+ * Adds a new recipe to the user's collection.
+ * This function performs the following steps:
+ * 1. Validates the recipe details (currently commented out).
+ * 2. Inserts the recipe details into the `myrecipes` table.
+ * 3. Retrieves the last inserted recipe ID.
+ * 4. Inserts the ingredients for the recipe into the `ingredients` table.
+ * 5. Inserts the instructions for the recipe into the `instructions` table.
+ * * @param {Object} recipe_details - The details of the recipe to be added.
+ * * @param {number} recipe_details.user_id - The ID of the user adding the recipe.
+ * * @param {string} recipe_details.title - The title of the recipe.
+ * * @param {string} recipe_details.image - The image URL of the recipe.
+ * * @param {number} recipe_details.ready_in_minutes - The time required to prepare the recipe in minutes.
+ * * @param {string} recipe_details.summary - A brief summary of the recipe.
+ * * @param {number} recipe_details.servings - The number of servings the recipe yields.
+ * * @param {boolean} recipe_details.vegan - Indicates if the recipe is vegan.
+ * * @param {boolean} recipe_details.vegetarian - Indicates if the recipe is vegetarian.
+ * * @param {boolean} recipe_details.is_gluten_free - Indicates if the recipe is gluten-free.
+ * * @param {Array} recipe_details.ingredients - An array of ingredient objects, each containing `name`, `quantity`, and `unit`.
+ * * * @param {Array} recipe_details.instructions - An array of instruction strings for the recipe.
+ * * @returns {Promise<void>} - A promise that resolves when the recipe is successfully added.
+ * * @throws {Error} - Throws an error if there is an issue with the database operation or if the recipe details are invalid.
+*/
 async function addNewRecipe(recipe_details) {
   //newRecipeValidations(recipe_details);
   await DButils.execQuery(
@@ -62,6 +105,12 @@ async function addNewRecipe(recipe_details) {
   }
 }
 
+/**
+ * Retrieves all my recipes for a specific user.
+ * @param {number} user_id - The ID of the user.
+ * @returns {Promise<Array>} - A promise that resolves to an array of recipe IDs.
+ * @throws {Error} - Throws an error if there is an issue with the database operation.
+*/
 async function getMyRecipes(user_id) {
   const myRecipes = await DButils.execQuery(
     `SELECT * FROM myrecipes WHERE user_id = '${user_id}'`
@@ -99,11 +148,27 @@ async function markAsFavorite(user_id, recipe_id) {
   }
 }
 
+/**
+ * Retrieves the list of favorite recipes for a specific user.
+ * * @param {number} user_id - The ID of the user.
+ * * @returns {Promise<Array>} - A promise that resolves to an array of recipe IDs.
+ * * This function queries the `userfavorites` table to get the recipe IDs of the user's favorite recipes.
+ * * If the user has no favorite recipes, it returns an empty array.
+ * * @throws {Error} - Throws an error if there is an issue with the database operation.
+*/
 async function getFavoriteRecipes(user_id){
     const recipes_id = await DButils.execQuery(`select recipeId from userfavorites where userId='${user_id}'`);
     return recipes_id.map(row => row.recipeId);
 }
 
+/**
+ * Removes a recipe from the user's favorites.
+ * * @param {number} user_id - The ID of the user.
+ * * @param {number} recipe_id - The ID of the recipe to be removed from favorites.
+ * * This function deletes the specified recipe from the `userfavorites` table for the given user.
+ * * If the recipe does not exist in the user's favorites, it will not throw an error.
+ * * @throws {Error} - Throws an error if there is an issue with the database operation.
+*/
 async function removeFavorite(user_id, recipe_id) {
   await DButils.execQuery(
     `DELETE FROM userfavorites WHERE userId = '${user_id}' AND recipeId = '${recipe_id}'`
@@ -114,6 +179,20 @@ async function removeFavorite(user_id, recipe_id) {
 
 // ==================================Family Recipes=========================================
 
+/**
+ * Adds a family recipe for a specific user.
+ * * @param {number} user_id - The ID of the user.
+ * * @param {number} recipeId - The ID of the recipe.
+ * * @param {string} familyMember - The name of the family member associated with the recipe.
+ * * @param {string} relation - The relation of the family member to the user (e.g., "mother", "grandfather").
+ * * @param {string} inventor - The name of the person who invented the recipe.
+ * * @param {string} bestEvent - The best event associated with the recipe.
+ * * @param {string} tips - Additional tips for the recipe.
+ * * @param {string} howTo - Instructions on how to prepare the recipe.
+ * * This function inserts a new family recipe into the `familyrecipes` table.
+ * * @returns {Promise<void>} - A promise that resolves when the recipe is successfully added.
+ * * @throws {Error} - Throws an error if there is an issue with the database operation.
+*/
 async function addFamilyRecipe(user_id, recipeId, familyMember, relation, inventor, bestEvent, tips, howTo) {
   await DButils.execQuery(
     `INSERT INTO familyrecipes
@@ -122,6 +201,15 @@ async function addFamilyRecipe(user_id, recipeId, familyMember, relation, invent
   );
 }
 
+
+/**
+ * Retrieves all family recipes for a specific user.
+ * * @param {number} user_id - The ID of the user.
+ * * @returns {Promise<Array>} - A promise that resolves to an array of family recipes.
+ * * This function queries the `familyrecipes` table to get all recipes associated with the user.
+ * * * If the user has no family recipes, it returns an empty array.
+ * * @throws {Error} - Throws an error if there is an issue with the database operation.
+ * */
 async function getFamilyRecipes(user_id) {
   const recipes = await DButils.execQuery(
     `SELECT * FROM familyrecipes WHERE user_id = '${user_id}' ORDER BY created_at DESC`
@@ -134,6 +222,16 @@ async function getFamilyRecipes(user_id) {
 
 //====================================Bonus - MyMeal & Recipe Making Progress=================================================
 
+/**
+ * Fetches the recipe progress for each recipe preview.
+ * @param {Array} recipes_info - An array of recipe information objects containing recipe IDs and progress.
+ * @param {Array} recipePreviews - An array of recipe preview objects containing recipe IDs.
+ * @return {Array} - An array of recipe preview objects with added recipe progress.
+ * This function maps over the recipePreviews array and finds the corresponding recipe_info from recipes_info based on the recipe ID.
+ * It adds the recipe_progress from recipes_info to each recipePreview object.
+ * If a recipe_info is not found, it sets recipe_progress to null.
+ * * @throws {Error} - Throws an error if there is an issue with the input data or if the recipe IDs do not match.
+ * */
 async function fetchRecipeProgress(recipes_info, recipePreviews) {
   return recipePreviews.map((recipePreview) => {
     const recipe_info = recipes_info.find(
@@ -149,7 +247,6 @@ async function fetchRecipeProgress(recipes_info, recipePreviews) {
 
 /**
  * Retrieves the list of recipes in the user's meal.
- *
  * @param {number} user_id - The ID of the user.
  * @param {number|null} recipe_id - The ID of a specific recipe to retrieve (optional).
  * @returns {Promise<Array>} - A promise that resolves to an array of recipe information.
@@ -172,13 +269,12 @@ async function getMyMealRecipes(user_id, recipe_id = null) {
   const recipes_info = recipes.map((recipe) => {
     let recipe_progress = null;
     
-    // Check if recipeProgress is not null before parsing
     if (recipe.recipeProgress) {
       try {
         recipe_progress = JSON.parse(recipe.recipeProgress);
       } catch (error) {
         console.error(`Error parsing recipeProgress for recipe_id: ${recipe.recipeId || recipe.externalRecipeId}`, error);
-        recipe_progress = null;  // Set to null if JSON parsing fails
+        recipe_progress = null;  
       }
     }
 
@@ -201,7 +297,6 @@ async function getMyMealRecipes(user_id, recipe_id = null) {
 
 /**
  * Adds a recipe to the user's meal.
- *
  * @param {number} user_id - The ID of the user.
  * @param {number} recipe_id - The ID of the recipe to be added to the meal.
  */
@@ -234,7 +329,6 @@ async function addToMyMeal(user_id, recipe_id) {
 
 /**
  * Removes a recipe from the user's meal.
- *
  * @param {number} user_id - The ID of the user.
  * @param {number} recipe_id - The ID of the recipe to be removed from the meal.
  */
@@ -255,7 +349,6 @@ async function removeFromMyMeal(user_id, recipe_id) {
 
 /**
  * Updates the progress of a recipe in the user's meal.
- *
  * @param {number} user_id - The ID of the user.
  * @param {number} recipe_id - The ID of the recipe.
  * @param {string} recipe_progress - The progress data of the recipe.
