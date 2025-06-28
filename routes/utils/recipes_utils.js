@@ -123,6 +123,7 @@ async function getRecipeFullInformationForAPI(recipe_id) {
       vegetarian: Boolean(vegetarian),
       glutenFree: Boolean(is_gluten_free),
       instructions: instructions,
+      ingredients: ingredients,
       extendedIngredients: ingredients,
       servings: servings,
     };
@@ -338,6 +339,88 @@ async function searchRecipe(recipeName, cuisines, diets, intolerances, number, s
 
 // ====================== Search ========================
 
+// ====================== Family Recipes ========================
+// /**
+//  * Get family recipes
+//  * @returns {Promise<Array>} - A promise that resolves to an array of family recipes.
+//  * @throws {Object} - Throws an error if there is an issue with retrieving the family recipes or if the user ID is invalid.
+//  */
+// async function getFamilyRecipes() {
+//   const recipes = await DButils.execQuery(
+//     `SELECT * FROM familyrecipes ORDER BY created_at DESC`
+//   );
+//   return recipes;
+// }
+
+// ====================== Family Recipes ========================
+
+/**
+ * Fetch analyzed instructions of a recipe from Spoonacular.
+ * @param {number} recipe_id - The ID of the recipe.
+ * @returns {Promise<Array>} - An array of instruction steps.
+ */
+// async function getAnalyzedInstructions(recipe_id) {
+//   const response = await axios.get(`${api_domain}/${recipe_id}/analyzedInstructions`, {
+//     params: {
+//       apiKey: process.env.spooncular_apiKey,
+//     },
+//   });
+
+//   return response.data;
+// }
+
+async function getAnalyzedInstructions(recipe_id) {
+  const sourceResult = await DButils.execQuery(`
+    SELECT recipeSource FROM usermeal 
+    WHERE recipeId = '${recipe_id}' OR externalRecipeId = '${recipe_id}'
+    LIMIT 1
+  `);
+
+  const recipeSource = sourceResult[0]?.recipeSource;
+
+  if (recipeSource === "MyRecipes") {
+    const instructions = await DButils.execQuery(`
+      SELECT instruction_order, instruction_text 
+      FROM instructions 
+      WHERE recipe_id = '${recipe_id}' 
+      ORDER BY instruction_order ASC
+    `);
+
+    const ingredients = await DButils.execQuery(`
+      SELECT name FROM ingredients 
+      WHERE recipe_id = '${recipe_id}'
+    `);
+
+    return [
+      {
+        name: "",
+        steps: instructions.map((ins, index) => ({
+          number: index + 1,
+          step: ins.instruction_text,
+          ingredients: ingredients.map(ing => ({
+            id: ing.name.toLowerCase().replace(/\s/g, "_"),
+            name: ing.name,
+            image: `${ing.name.replace(/\s/g, "-")}.jpg`
+          })),
+          equipment: [],
+          length: null
+        }))
+      }
+    ];
+  }
+
+  if (recipeSource === "Spoonacular") {
+    const response = await axios.get(`${api_domain}/${recipe_id}/analyzedInstructions`, {
+      params: {
+        apiKey: process.env.spooncular_apiKey,
+      },
+    });
+    return response.data;
+  }
+
+  throw { status: 404, message: "Recipe not found in user meal." };
+}
+
 
 
 
@@ -348,6 +431,8 @@ exports.getRecipeFullInformation = getRecipeFullInformation;
 exports.getRecipeInformation = getRecipeInformation;
 exports.getRecipesPreview = getRecipesPreview;
 exports.searchRecipe = searchRecipe;
+// exports.getFamilyRecipes = getFamilyRecipes;
+exports.getAnalyzedInstructions = getAnalyzedInstructions;
 
 
 

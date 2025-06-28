@@ -238,7 +238,8 @@ router.post("/addNewRecipe", async (req, res, next) => {
       instructions: req.body.instructions,
     };
     console.log("recipe_details.instructions = ", recipe_details.instructions);
-    recipe_id = await user_utils.addNewRecipe(recipe_details);
+    const newRecipeId = await user_utils.addNewRecipe(recipe_details);
+    await user_utils.addToMyMeal(recipe_details.user_id, newRecipeId);
     res.status(201).send({
       message: "Recipe has been created successfully.",
       success: true,
@@ -280,7 +281,108 @@ router.get("/MyRecipes", async (req, res, next) => {
     next(error);
   }
 });
-// ====================================MyRecipes===========================================================================
+// ====================================MyRecipes===================================================================================
+
+
+//================================== FamilyRecipes =================================================================================
+
+/**
+ * This route retrieves the family recipes of the logged-in user.
+ * Endpoint: GET /FamilyRecipes
+ * Response: List of family recipes.
+ * * If the user is not logged in, it throws a 401 error with a message indicating that no user is logged in.
+ * * If the user has no family recipes, it returns an empty array with a 200 status.
+ * * If the user has family recipes, it retrieves them and sends them in the response.
+ * * @route GET /FamilyRecipes
+ * * @returns {Array} - An array of family recipes.
+ * * * @throws {Object} - Throws a 401 error if no user is logged in.
+ * * * * @throws {Object} - Throws an error if there is an issue with retrieving the user's family recipes.
+ * */
+router.get("/FamilyRecipes", async (req, res, next) => {
+  try {
+    if (!req.session.user_id) {
+      throw { status: 401, message: "No user logged in" };
+    }
+    const user_id = req.session.user_id;
+    const recipes = await user_utils.getFamilyRecipes(user_id);
+    res.status(200).send(recipes);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * This route allows users to add a family recipe.
+ * It checks if the user is logged in by verifying the session user_id.
+ * If the user is logged in, it retrieves the user_id from the session
+ * and the family recipe details from the request body.
+ * It then calls the addFamilyRecipe function from user_utils to save the family recipe.
+ * If successful, it responds with a 201 status and a success message.
+ * * * @route POST /FamilyRecipes
+ * * * @returns {Object} - A success message indicating the family recipe was added successfully.
+ * * * * @throws {Object} - Throws a 401 error if no user is logged in.
+ * * * * @throws {Object} - Throws an error if there is an issue with adding the family recipe.
+ * */
+router.post("/FamilyRecipes", async (req, res, next) => {
+  try {
+    if (!req.session.user_id) {
+      throw { status: 401, message: "No user logged in" };
+    }
+
+    const user_id = req.session.user_id;
+    const {
+      recipeId,
+      familyMember,
+      relation,
+      inventor,
+      bestEvent,
+      ingredients,
+      instructions,
+      image_url,
+    } = req.body;
+
+    await user_utils.addFamilyRecipe(
+      user_id,
+      recipeId,
+      familyMember,
+      relation,
+      inventor,
+      bestEvent,
+      ingredients,
+      instructions,
+      image_url
+    );
+
+    res.status(201).send({ message: "Family recipe added successfully" });
+  } catch (error) {
+    next(error);
+  }
+});
+
+
+router.get("/FamilyRecipes/:recipeId", async (req, res, next) => {
+  try {
+    if (!req.session.user_id) {
+      throw { status: 401, message: "No user logged in" };
+    }
+
+    const recipe = await user_utils.getFamilyRecipeById(
+      req.session.user_id,
+      req.params.recipeId
+    );
+
+    if (!recipe) {
+      throw { status: 404, message: "Recipe not found" };
+    }
+
+    res.status(200).send(recipe);
+  } catch (error) {
+    next(error);
+  }
+});
+
+
+
 
 //==================================Bonus - MyMeal=================================================================================
 

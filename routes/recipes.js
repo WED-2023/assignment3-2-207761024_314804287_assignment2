@@ -101,4 +101,30 @@ router.post("/RecipesPreview", async (req, res, next) => {
   }
 });
 
+// router.get('/FamilyRecipes', async (req, res, next) => {
+//   try {
+//     const results = await recipe_utils.getFamilyRecipes();
+//     res.status(200).send(results);
+//   } catch (err) {
+//     next(err);
+//   }
+// });
+
+router.get("/:id/analyzedInstructions", async (req, res, next) => {
+  try {
+    const recipeId = req.params.id;
+    const instructions = await recipes_utils.getAnalyzedInstructions(recipeId);
+    res.status(200).send(instructions);
+  } catch (error) {
+    console.error("Error fetching analyzed instructions:", error.message);
+    next(error);
+  }
+});
+
+
+
+
+
+
+
 module.exports = router;

@@ -103,6 +103,7 @@ async function addNewRecipe(recipe_details) {
       `INSERT INTO instructions (recipe_id, instruction_order, instruction_text) VALUES ('${newRecipeId}', '${order++}', '${instruction}')`
     );
   }
+  return newRecipeId;
 }
 
 /**
@@ -156,9 +157,11 @@ async function markAsFavorite(user_id, recipe_id) {
  * * If the user has no favorite recipes, it returns an empty array.
  * * @throws {Error} - Throws an error if there is an issue with the database operation.
 */
-async function getFavoriteRecipes(user_id){
-    const recipes_id = await DButils.execQuery(`select recipeId from userfavorites where userId='${user_id}'`);
-    return recipes_id.map(row => row.recipeId);
+async function getFavoriteRecipes(user_id) {
+  const recipes = await DButils.execQuery(
+    `SELECT externalRecipeId FROM userfavorites WHERE userId='${user_id}'`
+  );
+  return recipes.map(row => row.externalRecipeId);
 }
 
 /**
@@ -171,7 +174,7 @@ async function getFavoriteRecipes(user_id){
 */
 async function removeFavorite(user_id, recipe_id) {
   await DButils.execQuery(
-    `DELETE FROM userfavorites WHERE userId = '${user_id}' AND recipeId = '${recipe_id}'`
+    `DELETE FROM userfavorites WHERE userId = '${user_id}' AND externalRecipeId = '${recipe_id}'`
   );
 }
 
@@ -181,41 +184,37 @@ async function removeFavorite(user_id, recipe_id) {
 
 /**
  * Adds a family recipe for a specific user.
- * * @param {number} user_id - The ID of the user.
- * * @param {number} recipeId - The ID of the recipe.
- * * @param {string} familyMember - The name of the family member associated with the recipe.
- * * @param {string} relation - The relation of the family member to the user (e.g., "mother", "grandfather").
- * * @param {string} inventor - The name of the person who invented the recipe.
- * * @param {string} bestEvent - The best event associated with the recipe.
- * * @param {string} tips - Additional tips for the recipe.
- * * @param {string} howTo - Instructions on how to prepare the recipe.
- * * This function inserts a new family recipe into the `familyrecipes` table.
- * * @returns {Promise<void>} - A promise that resolves when the recipe is successfully added.
- * * @throws {Error} - Throws an error if there is an issue with the database operation.
-*/
-async function addFamilyRecipe(user_id, recipeId, familyMember, relation, inventor, bestEvent, tips, howTo) {
+ * @param {number} user_id - The ID of the user.
+ * @param {number} recipeId - The ID of the recipe.
+ * @param {string} familyMember - The name of the family member associated with the recipe.
+ * @param {string} relation - The relation of the family member to the user.
+ * @param {string} inventor - The name of the person who invented the recipe.
+ * @param {string} bestEvent - The best event associated with the recipe.
+ * @param {string} ingredients - List of ingredients (stored as text).
+ * @param {string} instructions - Step-by-step instructions in analyzed format.
+ * @param {string} image_url - Optional image URL.
+ */
+async function addFamilyRecipe(user_id, recipeId, familyMember, relation, inventor, bestEvent, ingredients, instructions, image_url) {
   await DButils.execQuery(
     `INSERT INTO familyrecipes
-      (user_id, recipe_id, family_member, relation, inventor, best_event, tips, how_to)
-     VALUES ('${user_id}', '${recipeId}', '${familyMember}', '${relation}', '${inventor}', '${bestEvent}', '${tips}', '${howTo}')`
+      (user_id, recipe_id, family_member, relation, inventor, best_event, ingredients, instructions, image_url)
+     VALUES ('${user_id}', '${recipeId}', '${familyMember}', '${relation}', '${inventor}', '${bestEvent}', '${ingredients}', '${instructions}', '${image_url}')`
   );
 }
 
 
 /**
  * Retrieves all family recipes for a specific user.
- * * @param {number} user_id - The ID of the user.
- * * @returns {Promise<Array>} - A promise that resolves to an array of family recipes.
- * * This function queries the `familyrecipes` table to get all recipes associated with the user.
- * * * If the user has no family recipes, it returns an empty array.
- * * @throws {Error} - Throws an error if there is an issue with the database operation.
- * */
+ * @param {number} user_id - The ID of the user.
+ * @returns {Promise<Array>} - Array of family recipes.
+ */
 async function getFamilyRecipes(user_id) {
   const recipes = await DButils.execQuery(
     `SELECT * FROM familyrecipes WHERE user_id = '${user_id}' ORDER BY created_at DESC`
   );
   return recipes;
 }
+
 
 // ==================================Family Recipes=========================================
 
@@ -251,49 +250,103 @@ async function fetchRecipeProgress(recipes_info, recipePreviews) {
  * @param {number|null} recipe_id - The ID of a specific recipe to retrieve (optional).
  * @returns {Promise<Array>} - A promise that resolves to an array of recipe information.
  */
-
 async function getMyMealRecipes(user_id, recipe_id = null) {
-  console.log("user_utils.js: recipe_id = ", recipe_id);
   const recipes = recipe_id
     ? await DButils.execQuery(`SELECT recipeId, externalRecipeId, recipeSource, recipeProgress FROM usermeal WHERE userId = '${user_id}' AND (recipeId = '${recipe_id}' OR externalRecipeId = '${recipe_id}')`)
     : await DButils.execQuery(`SELECT recipeId, externalRecipeId, recipeSource, recipeProgress FROM usermeal WHERE userId = '${user_id}'`);
 
-  console.log("user_utils.js: before if (recipes.length == 0)");
+  if (recipes.length === 0) return [];
 
-  if (recipes.length == 0) {
-    console.log("user_utils.js: inside if (recipes.length == 0)");
-    return [];
-  }
-  console.log("user_utils.js: after if (recipes.length == 0)");
+  const recipes_info = [];
 
-  const recipes_info = recipes.map((recipe) => {
+  for (const recipe of recipes) {
     let recipe_progress = null;
-    
     if (recipe.recipeProgress) {
       try {
         recipe_progress = JSON.parse(recipe.recipeProgress);
       } catch (error) {
         console.error(`Error parsing recipeProgress for recipe_id: ${recipe.recipeId || recipe.externalRecipeId}`, error);
-        recipe_progress = null;  
+        recipe_progress = null;
       }
     }
 
     if (recipe.recipeSource === "MyRecipes") {
-      return {
-        recipe_id: recipe.recipeId,
-        recipe_progress,
-      };
-    } else if (recipe.recipeSource === "Spoonacular") {
-      return {
-        recipe_id: recipe.externalRecipeId,
-        recipe_progress,
-      };
-    }
-  });
+      const result = await DButils.execQuery(
+        `SELECT * FROM myrecipes WHERE recipe_id = '${recipe.recipeId}'`
+      );
+      if (result.length > 0) {
+        const fullRecipe = result[0];
+        fullRecipe.recipe_progress = recipe_progress;
+        fullRecipe.id = recipe.recipeId;
 
-  console.log("user_utils.js: recipes_info", recipes_info);
+        const instructions = await DButils.execQuery(
+          `SELECT instruction FROM instructions WHERE recipe_id = '${recipe.recipeId}'`
+        );
+        const ingredients = await DButils.execQuery(
+          `SELECT name, quantity, unit FROM ingredients WHERE recipe_id = '${recipe.recipeId}'`
+        );
+
+        fullRecipe.analyzedInstructions = [
+          { steps: instructions.map((step, index) => ({ number: index + 1, step: step.instruction })) }
+        ];
+        fullRecipe.extendedIngredients = ingredients;
+
+        recipes_info.push(fullRecipe);
+      }
+    }
+    else if (recipe.recipeSource === "Spoonacular") {
+      recipes_info.push({
+        id: recipe.externalRecipeId,
+        recipe_progress,
+      });
+    }
+  }
+
   return recipes_info;
 }
+
+// async function getMyMealRecipes(user_id, recipe_id = null) {
+//   console.log("user_utils.js: recipe_id = ", recipe_id);
+//   const recipes = recipe_id
+//     ? await DButils.execQuery(`SELECT recipeId, externalRecipeId, recipeSource, recipeProgress FROM usermeal WHERE userId = '${user_id}' AND (recipeId = '${recipe_id}' OR externalRecipeId = '${recipe_id}')`)
+//     : await DButils.execQuery(`SELECT recipeId, externalRecipeId, recipeSource, recipeProgress FROM usermeal WHERE userId = '${user_id}'`);
+
+//   console.log("user_utils.js: before if (recipes.length == 0)");
+
+//   if (recipes.length == 0) {
+//     console.log("user_utils.js: inside if (recipes.length == 0)");
+//     return [];
+//   }
+//   console.log("user_utils.js: after if (recipes.length == 0)");
+
+//   const recipes_info = recipes.map((recipe) => {
+//     let recipe_progress = null;
+    
+//     if (recipe.recipeProgress) {
+//       try {
+//         recipe_progress = JSON.parse(recipe.recipeProgress);
+//       } catch (error) {
+//         console.error(`Error parsing recipeProgress for recipe_id: ${recipe.recipeId || recipe.externalRecipeId}`, error);
+//         recipe_progress = null;  
+//       }
+//     }
+
+//     if (recipe.recipeSource === "MyRecipes") {
+//       return {
+//         recipe_id: recipe.recipeId,
+//         recipe_progress,
+//       };
+//     } else if (recipe.recipeSource === "Spoonacular") {
+//       return {
+//         recipe_id: recipe.externalRecipeId,
+//         recipe_progress,
+//       };
+//     }
+//   });
+
+//   console.log("user_utils.js: recipes_info", recipes_info);
+//   return recipes_info;
+// }
 
 /**
  * Adds a recipe to the user's meal.
