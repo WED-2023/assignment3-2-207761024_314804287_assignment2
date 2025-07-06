@@ -9,7 +9,7 @@ var cors = require('cors')
 
 var app = express();
 app.use(logger("dev")); //logger
-app.use(express.json()); // parse application/json
+app.use(express.json({ limit: "5mb" })); // parse application/json
 app.use(
   session({
     cookieName: "session", // the cookie key name
@@ -23,7 +23,7 @@ app.use(
     //the session will be extended by activeDuration milliseconds
   })
 );
-app.use(express.urlencoded({ extended: false })); // parse application/x-www-form-urlencoded
+app.use(express.urlencoded({ extended: false, limit: "5mb" })); // parse application/x-www-form-urlencoded
 app.use(express.static(path.join(__dirname, "public"))); //To serve static files such as images, CSS files, and JavaScript files
 //local:
 app.use(express.static(path.join(__dirname, "dist")));

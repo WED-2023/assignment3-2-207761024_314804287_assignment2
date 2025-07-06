@@ -407,7 +407,7 @@ router.get("/MyMeal", async (req, res, next) => {
     }
 
     const recipes_id = recipes_info
-      .map(r => r.recipe_id)           
+      .map(r => r.id)           
       .filter(id => id != null);       
 
     const recipePreviews = await recipes_utils.getRecipesPreview(recipes_id);

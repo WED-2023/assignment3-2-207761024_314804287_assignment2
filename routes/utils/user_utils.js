@@ -234,7 +234,7 @@ async function getFamilyRecipes(user_id) {
 async function fetchRecipeProgress(recipes_info, recipePreviews) {
   return recipePreviews.map((recipePreview) => {
     const recipe_info = recipes_info.find(
-      (recipe) => recipe.recipe_id == recipePreview.id
+      (recipe) => (recipe.recipe_id == recipePreview.id || recipe.id == recipePreview.id)
     );
     return {
       ...recipePreview,
@@ -265,10 +265,18 @@ async function getMyMealRecipes(user_id, recipe_id = null) {
       try {
         recipe_progress = JSON.parse(recipe.recipeProgress);
       } catch (error) {
-        console.error(`Error parsing recipeProgress for recipe_id: ${recipe.recipeId || recipe.externalRecipeId}`, error);
-        recipe_progress = null;
+        try {
+          const fixed = recipe.recipeProgress
+            .replace(/\btrue\b/g, '"true"')
+            .replace(/\bfalse\b/g, '"false"');
+          recipe_progress = JSON.parse(fixed).map(v => v === "true");
+        } catch (error2) {
+          console.error(`Failed to parse recipeProgress for recipe_id: ${recipe.recipeId || recipe.externalRecipeId}`, error2);
+          recipe_progress = null;
+        }
       }
     }
+
 
     if (recipe.recipeSource === "MyRecipes") {
       const result = await DButils.execQuery(
@@ -280,14 +288,14 @@ async function getMyMealRecipes(user_id, recipe_id = null) {
         fullRecipe.id = recipe.recipeId;
 
         const instructions = await DButils.execQuery(
-          `SELECT instruction FROM instructions WHERE recipe_id = '${recipe.recipeId}'`
+          `SELECT instruction_text FROM instructions WHERE recipe_id = '${recipe.recipeId}'`
         );
         const ingredients = await DButils.execQuery(
           `SELECT name, quantity, unit FROM ingredients WHERE recipe_id = '${recipe.recipeId}'`
         );
 
         fullRecipe.analyzedInstructions = [
-          { steps: instructions.map((step, index) => ({ number: index + 1, step: step.instruction })) }
+          { steps: instructions.map((step, index) => ({ number: index + 1, step: step.instruction_text })) }
         ];
         fullRecipe.extendedIngredients = ingredients;
 
@@ -305,48 +313,6 @@ async function getMyMealRecipes(user_id, recipe_id = null) {
   return recipes_info;
 }
 
-// async function getMyMealRecipes(user_id, recipe_id = null) {
-//   console.log("user_utils.js: recipe_id = ", recipe_id);
-//   const recipes = recipe_id
-//     ? await DButils.execQuery(`SELECT recipeId, externalRecipeId, recipeSource, recipeProgress FROM usermeal WHERE userId = '${user_id}' AND (recipeId = '${recipe_id}' OR externalRecipeId = '${recipe_id}')`)
-//     : await DButils.execQuery(`SELECT recipeId, externalRecipeId, recipeSource, recipeProgress FROM usermeal WHERE userId = '${user_id}'`);
-
-//   console.log("user_utils.js: before if (recipes.length == 0)");
-
-//   if (recipes.length == 0) {
-//     console.log("user_utils.js: inside if (recipes.length == 0)");
-//     return [];
-//   }
-//   console.log("user_utils.js: after if (recipes.length == 0)");
-
-//   const recipes_info = recipes.map((recipe) => {
-//     let recipe_progress = null;
-    
-//     if (recipe.recipeProgress) {
-//       try {
-//         recipe_progress = JSON.parse(recipe.recipeProgress);
-//       } catch (error) {
-//         console.error(`Error parsing recipeProgress for recipe_id: ${recipe.recipeId || recipe.externalRecipeId}`, error);
-//         recipe_progress = null;  
-//       }
-//     }
-
-//     if (recipe.recipeSource === "MyRecipes") {
-//       return {
-//         recipe_id: recipe.recipeId,
-//         recipe_progress,
-//       };
-//     } else if (recipe.recipeSource === "Spoonacular") {
-//       return {
-//         recipe_id: recipe.externalRecipeId,
-//         recipe_progress,
-//       };
-//     }
-//   });
-
-//   console.log("user_utils.js: recipes_info", recipes_info);
-//   return recipes_info;
-// }
 
 /**
  * Adds a recipe to the user's meal.

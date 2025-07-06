@@ -101,14 +101,6 @@ router.post("/RecipesPreview", async (req, res, next) => {
   }
 });
 
-// router.get('/FamilyRecipes', async (req, res, next) => {
-//   try {
-//     const results = await recipe_utils.getFamilyRecipes();
-//     res.status(200).send(results);
-//   } catch (err) {
-//     next(err);
-//   }
-// });
 
 router.get("/:id/analyzedInstructions", async (req, res, next) => {
   try {

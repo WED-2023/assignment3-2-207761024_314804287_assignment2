@@ -337,37 +337,6 @@ async function searchRecipe(recipeName, cuisines, diets, intolerances, number, s
 }
 
 
-// ====================== Search ========================
-
-// ====================== Family Recipes ========================
-// /**
-//  * Get family recipes
-//  * @returns {Promise<Array>} - A promise that resolves to an array of family recipes.
-//  * @throws {Object} - Throws an error if there is an issue with retrieving the family recipes or if the user ID is invalid.
-//  */
-// async function getFamilyRecipes() {
-//   const recipes = await DButils.execQuery(
-//     `SELECT * FROM familyrecipes ORDER BY created_at DESC`
-//   );
-//   return recipes;
-// }
-
-// ====================== Family Recipes ========================
-
-/**
- * Fetch analyzed instructions of a recipe from Spoonacular.
- * @param {number} recipe_id - The ID of the recipe.
- * @returns {Promise<Array>} - An array of instruction steps.
- */
-// async function getAnalyzedInstructions(recipe_id) {
-//   const response = await axios.get(`${api_domain}/${recipe_id}/analyzedInstructions`, {
-//     params: {
-//       apiKey: process.env.spooncular_apiKey,
-//     },
-//   });
-
-//   return response.data;
-// }
 
 async function getAnalyzedInstructions(recipe_id) {
   const sourceResult = await DButils.execQuery(`
